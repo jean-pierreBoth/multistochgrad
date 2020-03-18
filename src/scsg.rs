@@ -6,7 +6,7 @@ use log::{debug, info, warn, trace, log_enabled};
 
 use rand::{SeedableRng};
 use rand::distributions::{Distribution};
-// a fast but non crypto secure algo
+// a fast but non crypto secure algo. method jump to use in // !!!!
 use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::types::*;
@@ -35,11 +35,12 @@ impl  StochasticControlledGradientDescent {
     }
     /// sample number of mini batch according to geometric law of parameter p = b_j/(m_j+b_j) 
     /// with law : P(N=k) = (1-p) * p^k. (proba of nb trial before success mode)
-    fn sample_nb_small_mini_batches(&self, rng : &mut Xoshiro256PlusPlus, j : usize) -> usize {
+    fn sample_nb_small_mini_batches(&self, j : usize, rng : &mut Xoshiro256PlusPlus) -> usize {
         let mut m_batch_size_j = 1;
         let m_j = self.inner_loop_size as f64;
         let b_j = self.mini_batch_size as f64;
         let p : f64 = m_j/(m_j+b_j);
+        // pass a &mut here!!
         let mut xsi : f64 = rand_distr::Standard.sample(rng);
         // success is when xsi is >= p !!
         while xsi < p {
@@ -49,10 +50,26 @@ impl  StochasticControlledGradientDescent {
         trace!(" mini batch size {:?} ", m_batch_size_j);
         return m_batch_size_j;
     }
-    //
-    fn sample_batch_terms(&self, size: usize, in_terms: &[usize]) -> Vec<usize> {
+    // sample (without replacemet) size terms among in_terms
+    // should have size of in_terms >>  size
+    fn sample_batch_terms(&self, size: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
         let mut out_terms = Vec::<usize>::with_capacity(size);
-        // sample terms
+        //
+        assert!(size >= in_terms.len());
+
+        // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
+        // https://bastian.rieck.me/blog/posts/2017/selection_sampling/
+        let mut t : usize = 0;
+        let mut xsi : f64;
+        while t < size {
+            xsi = rand_distr::Standard.sample(rng);
+            if xsi * ((in_terms.len() - t) as f64) < (size-out_terms.len()) as f64 {
+                out_terms.push(in_terms[t]);
+            }
+            t+=1;
+        }
+        //
+        assert_eq!(size, out_terms.len());
         //
         out_terms
     }
@@ -84,12 +101,12 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
 
 
             // sample binomial law for number Nj of small batch iterations
-            let n_j = self.sample_nb_small_mini_batches(&mut rng, iteration);
+            let n_j = self.sample_nb_small_mini_batches(iteration, &mut rng);
             // loop on small batch iterations
 
             for _k in 0..n_j {
                 // sample mini batch
-                let terms = self.sample_batch_terms(n_j, &all_terms);
+                let terms = self.sample_batch_terms(n_j, &all_terms, &mut rng);
                 let gradient = function.partial_gradient(&position, terms);
 
                 // step into the direction of the negative gradient
