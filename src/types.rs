@@ -1,8 +1,9 @@
-// This file is taken from the crate optimisation beccause we want access to the type Solution
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
+//
+// This file is taken from the crate optimisation, with minor modifications,
+// beccause we want access to the type Solution
 
 
-use std::borrow::Borrow;
 
 
 /// Defines an objective function `f` that is subject to minimization.
@@ -28,7 +29,7 @@ impl<F: Fn(&[f64]) -> f64> Function for Func<F> {
 
 /// Defines an objective function `f` that is able to compute the first derivative
 /// `f'(x)`.
-pub trait Function1: Function {
+pub trait FunctionC1: Function {
     /// Computes the gradient of the objective function at a given `position` `x`,
     /// i.e., `∀ᵢ ∂/∂xᵢ f(x) = ∇f(x)`.
     fn gradient(&self, position: &[f64]) -> Vec<f64>;
@@ -45,16 +46,17 @@ pub trait Summation: Function {
     fn term_value(&self, position: &[f64], term: usize) -> f64;
 
     /// Computes the partial sum over a set of individual functions identified by `terms`.
-    fn partial_value<T: IntoIterator<Item=I>, I: Borrow<usize>>(&self, position: &[f64], terms: T) -> f64 {
+    fn partial_value<T: IntoIterator<Item=usize>>(&self, position: &[f64], terms: T) -> f64 {
         let mut value = 0.0;
 
         for term in terms {
-            value += self.term_value(position, *term.borrow());
+            value += self.term_value(position, term);
         }
 
         value
     }
-}
+} // end trait Summation
+
 
 impl<S: Summation> Function for S {
     fn value(&self, position: &[f64]) -> f64 {
@@ -65,17 +67,17 @@ impl<S: Summation> Function for S {
 
 /// Defines a summation of individual functions `fᵢ(x)`, assuming that each function has a first
 /// derivative.
-pub trait Summation1: Summation + Function1 {
+pub trait SummationC1: Summation + FunctionC1 {
     /// Computes the gradient of one individual function identified by `term` at the given
     /// `position`.
-    fn term_gradient(&self, position: &[f64], term: usize) -> Vec<f64>;
+    fn term_gradient(&self, position: &[f64], term: &usize) -> Vec<f64>;
 
     /// Computes the partial gradient over a set of `terms` at the given `position`.
-    fn partial_gradient<T: IntoIterator<Item=I>, I: Borrow<usize>>(&self, position: &[f64], terms: T) -> Vec<f64> {
+    fn partial_gradient<T: IntoIterator<Item=usize>> (&self, position: &[f64], terms: T) -> Vec<f64> {
         let mut gradient = vec![0.0; position.len()];
 
         for term in terms {
-            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, *term.borrow())) {
+            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, &term)) {
                 *g += gi;
             }
         }
@@ -84,7 +86,7 @@ pub trait Summation1: Summation + Function1 {
     }
 }
 
-impl<S: Summation1> Function1 for S {
+impl<S: SummationC1> FunctionC1 for S {
     fn gradient(&self, position: &[f64]) -> Vec<f64> {
         self.partial_gradient(position, 0..self.terms())
     }
