@@ -70,25 +70,25 @@ impl<S: Summation> Function for S {
 pub trait SummationC1: Summation + FunctionC1 {
     /// Computes the gradient of one individual function identified by `term` at the given
     /// `position`.
-    fn term_gradient(&self, position: &[f64], term: &usize) -> Vec<f64>;
+    fn term_gradient(&self, position: &[f64], term: usize) -> Vec<f64>;
 
     /// Computes the partial gradient over a set of `terms` at the given `position`.
     fn partial_gradient<T: IntoIterator<Item=usize>> (&self, position: &[f64], terms: T) -> Vec<f64> {
         let mut gradient = vec![0.0; position.len()];
-
-        for term in terms {
-            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, &term)) {
+        // could Rayon // here if length of iterator i.e dimension dimension of data is very large.
+        for term in terms.into_iter() {
+            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, term)) {
                 *g += gi;
             }
         }
-
         gradient
-    }
-}
+    } // end partial_gradient
+}    // end trait SummationC1
+
 
 impl<S: SummationC1> FunctionC1 for S {
     fn gradient(&self, position: &[f64]) -> Vec<f64> {
-        self.partial_gradient(position, 0..self.terms())
+        self.partial_gradient(position, (0..self.terms()))
     }
 }
 
