@@ -143,9 +143,10 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
 
     fn minimize(&self, function: &F, initial_position: Vec<f64>) -> Solution {
         let mut position = initial_position;
+        let dimension = position.len();
         let mut value = function.value(&position);
-        let mut direction : Vec<f64> = Vec::with_capacity(position.len());
-        for _ in 0..position.len() {
+        let mut direction : Vec<f64> = Vec::with_capacity(dimension);
+        for _ in 0..dimension {
             direction.push(0.);
         } 
 
@@ -167,7 +168,7 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             // sample large batch of size Bj
             let large_batch_indexes = sample_without_replacement_iter(iter_params.large_batch, 0..nb_terms, nb_terms, & mut rng);
             // compute gradient on large batch index set and store initial position
-            let large_batch_gradient = function.partial_gradient(&position, large_batch_indexes);
+            let large_batch_gradient = function.partial_gradient(&position, &large_batch_indexes);
             let position_before_mini_batch = position.clone();
             let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
@@ -176,14 +177,14 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             for _k in 0..n_j {
                 // sample mini batch terms
                 let terms = self.sample_batch_terms(n_j, &all_terms, &mut rng);
-                let mini_batch_gradient_current = function.partial_gradient(&position, terms);
-                let mini_batch_gradient_origin = function.partial_gradient(&position_before_mini_batch, terms);
-                for i in 0..direction.len() {
+                let mini_batch_gradient_current = function.partial_gradient(&position, &terms);
+                let mini_batch_gradient_origin = function.partial_gradient(&position_before_mini_batch, &terms);
+                for i in 0..dimension {
                     direction[i] = mini_batch_gradient_current[i] - mini_batch_gradient_origin[i] + large_batch_gradient[i];
                 }
                 // step into the direction of the negative gradient
-                for (x, g) in position.iter_mut().zip(direction) {
-                    *x -= self.step_width * g;
+                for i in 0..dimension  {
+                    position[i] -= self.step_width * direction[i];
                 }
             }
 
