@@ -86,7 +86,15 @@ pub trait SummationC1: Summation + FunctionC1 {
 
 impl<S: SummationC1> FunctionC1 for S {
     fn gradient(&self, position: &[f64]) -> Vec<f64> {
-        self.partial_gradient(position, &(0..self.terms()).into_iter().collect::<Vec<usize>>())
+        let dimension = position.len();
+        let mut gradient = vec![0.0; dimension];
+        // CAVEAT to //
+        for term in 0..self.terms() {
+            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, &term)) {
+                *g += gi;
+            }
+        }
+        gradient
     }
 }
 
