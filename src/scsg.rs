@@ -11,6 +11,8 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 
 use crate::types::*;
 
+
+
 // a struct to have batch size (large and mini) to use at a given iteration
 // we must have large_batch >= nb_mini_batch_parameter >= mini_batch  (Cf Th 4.1)
 pub struct  BatchSizeInfo {
@@ -42,7 +44,6 @@ pub struct StochasticControlledGradientDescent {
 }
 
 impl  StochasticControlledGradientDescent {
-
     pub fn new(m_zero: f64, mini_batch_size : usize, large_batch_size_init: usize, batch_growing_factor : f64) -> StochasticControlledGradientDescent {
         StochasticControlledGradientDescent {
             rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
@@ -97,6 +98,7 @@ impl  StochasticControlledGradientDescent {
 
 
 #[allow(dead_code)]
+// if size_asked > size_in all terms are accepted, we get a full gradient!
 fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
         let mut out_terms = Vec::<usize>::with_capacity(size_asked);
         // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
@@ -120,8 +122,8 @@ fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], 
 
 // this function requires that size_in be equal to in_temrs.count() !!!!
 // but it can be useful as it enables call with a range and thus avoid passing reference to large slice!
+// if size_asked > size_in all terms are accepted, we get a full gradient!
 fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterator<Item=usize>, size_in : usize, rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
-
     let mut out_terms = Vec::<usize>::with_capacity(size_asked);
     let mut xsi : f64;
     for t in  in_terms.into_iter() {
@@ -148,9 +150,9 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
         } 
 
         if log_enabled!(Info) {
-            info!("Starting with y = {:?} for x = {:?}", value, position);
+            info!("Starting with y = {:e} for x = {:?}", value, position);
         } else {
-            info!("Starting with y = {:?}", value);
+            info!("Starting with y = {:e}", value);
         }
 
         let mut iteration : usize = 0;
@@ -160,9 +162,10 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
         loop {
             // get iteration parameters
             let iter_params = self.get_batch_size_at_jstep(iteration);
-
             // sample large batch of size Bj
             let large_batch_indexes = sample_without_replacement_iter(iter_params.large_batch, 0..nb_terms, nb_terms, & mut rng);
+            trace!("iter {:?} got large batch size {:?}, mini batch param {:2.4E}", 
+                    iteration, large_batch_indexes.len(), iter_params.nb_mini_batch_parameter);
             // compute gradient on large batch index set and store initial position
             let large_batch_gradient = function.partial_gradient(&position, &large_batch_indexes);
             let position_before_mini_batch = position.clone();
@@ -191,9 +194,12 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
 
             value = function.value(&position);
             if log_enabled!(Trace) {
-                debug!("Iteration {:6}: y = {:?}, x = {:?}", iteration, value, position);
+                // compute gradient norm
+                let mut norm = direction.iter().fold(0., | acc, x  | acc + x*x);
+                norm = norm.sqrt();
+                debug!("Iteration {:?} y = {:2.4E}, | direction| = {:2.4e}", iteration, value, norm);
             } else {
-                debug!("Iteration {:6}: y = {:?}", iteration, value);
+                debug!("Iteration {:?}  y = {:2.4E}", iteration, value);
             }
             // convergence control or max iterations control
             if let Some(max_iterations) = self.max_iterations {
@@ -203,8 +209,11 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
                 }
             }
             else {
-                info!("Reached default number  of iterations required  {:?} , stopping optimization", 100);
-                return Solution::new(position, value);
+                // devise something else
+                if iteration >= 100 {
+                    info!("Reached default number  of iterations required  {:?} , stopping optimization", 100);
+                    return Solution::new(position, value);
+                }
             }
         } // end global loop
 

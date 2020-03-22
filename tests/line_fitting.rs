@@ -5,7 +5,7 @@
 //! Illustration of fitting a linear regression model using stochastic gradient descent
 //! given a few noisy sample observations.
 //!
-//! Run with `cargo test --test line_fitting`.
+//! Run with `RUST_LOG=trace    cargo test --test line_fitting`.
 
 
 extern crate env_logger;
@@ -24,6 +24,7 @@ use multistochgrad::types::*;
 fn test_line_regression() {
     let _ = env_logger::init();
 
+    log::set_max_level(log::LevelFilter::Trace);
     // the true coefficients of our linear model
     let true_coefficients = &[13.37, -4.2, 3.14];
 
