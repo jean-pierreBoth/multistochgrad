@@ -1,5 +1,5 @@
-
-
+//! A Rust implementation of Lei-Jordan paper 
+//! On the adaptativity of Stochastic gradient based optiimization 
 
 use log::Level::*;
 use log::{debug, info, warn, trace, log_enabled};
@@ -14,7 +14,7 @@ use crate::types::*;
 // a struct to have batch size (large and mini) to use at a given iteration
 // we must have large_batch >= nb_mini_batch_parameter >= mini_batch  (Cf Th 4.1)
 pub struct  BatchSizeInfo {
-    step : usize,
+    _step : usize,
     // large batch size
     large_batch : usize,
     // mini batvh size
@@ -29,21 +29,30 @@ pub struct  BatchSizeInfo {
 /// as described in Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
 pub struct StochasticControlledGradientDescent {
     rng: Xoshiro256PlusPlus,
-    mini_batch_size: usize,
-    // mj parameter of paper
-    inner_loop_size : usize,
-    // Bj in Paper
-    large_batch_size: usize,
+    // parameter governing evolution of inner_loop_size
+    m_zero: f64,
+    // mini batch size. A constant
+    mini_batch_size : usize,
+    // B_0 in Paper
+    large_batch_size_init: usize,
     // T in paper.
     max_iterations: Option<usize>,
-    momentum : Option<f64>,
-    // governs growing sizes of B_j and m_j (large and mini batch sizes)
+    // governs growing sizes of B_j and m_j (large and mini batch sizes). alfa in the paper.
     batch_growing_factor : f64,
-    step_width: f64
 }
 
 impl  StochasticControlledGradientDescent {
 
+    pub fn new(m_zero: f64, mini_batch_size : usize, large_batch_size_init: usize, batch_growing_factor : f64) -> StochasticControlledGradientDescent {
+        StochasticControlledGradientDescent {
+            rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
+            m_zero : m_zero,
+            mini_batch_size : mini_batch_size,
+            large_batch_size_init : large_batch_size_init,
+            max_iterations : None,
+            batch_growing_factor : batch_growing_factor
+        }
+    }
     /// Seeds the random number generator using the supplied `seed`.
     /// This is useful to create re-producable results.
     pub fn seed(&mut self, seed: [u8; 32]) {
@@ -52,12 +61,11 @@ impl  StochasticControlledGradientDescent {
     ///
     pub fn get_batch_size_at_jstep(&self, j: usize) -> BatchSizeInfo {
         let alfa_j = self.batch_growing_factor.powi(j as i32);
-        let mini_batch_size = 10;
         BatchSizeInfo {
-            step : j,
-            large_batch : (alfa_j * alfa_j).ceil() as usize,
-            mini_batch : mini_batch_size,
-            nb_mini_batch_parameter : alfa_j,
+            _step : j,
+            large_batch : self.large_batch_size_init * (alfa_j * alfa_j).ceil() as usize,
+            mini_batch : self.mini_batch_size,
+            nb_mini_batch_parameter : self.m_zero * alfa_j,
         }
     } // end of get_batch_size_at_jstep
     ///
@@ -88,7 +96,7 @@ impl  StochasticControlledGradientDescent {
 } // end impl StochasticControlledGradientDescent
 
 
-
+#[allow(dead_code)]
 fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
         let mut out_terms = Vec::<usize>::with_capacity(size_asked);
         // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
@@ -107,9 +115,10 @@ fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], 
         assert_eq!(size_asked, out_terms.len());
         //
         out_terms
-    }
+}  // end of sample_without_replacement_from_slice
 
-// this functio requires that size_in be equal to in_temrs.count() !!!!
+
+// this function requires that size_in be equal to in_temrs.count() !!!!
 // but it can be useful as it enables call with a range and thus avoid passing reference to large slice!
 fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterator<Item=usize>, size_in : usize, rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
 
@@ -145,7 +154,6 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
         }
 
         let mut iteration : usize = 0;
-        let all_terms: Vec<_> = (0..function.terms()).collect();
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
 
@@ -202,3 +210,18 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
 
     } // end minimize
 }  // end impl impl<F: Summation1> Minimizer<F>
+
+
+#[cfg(test)]
+
+mod tests {
+
+use super::*;
+
+#[test]
+
+fn test_geometric_law() {
+
+}
+
+}  // end of mod tests
