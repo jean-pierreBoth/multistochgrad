@@ -49,7 +49,10 @@ fn test_line_regression() {
     let solution = StochasticControlledGradientDescent::new(1., 10, 10, 1.1)
         .minimize(&sse, vec![1.0; true_coefficients.len()]);
 
-    println!("Found coefficients {:?} with a SSE = {:?}", solution.position, solution.value);
+    println!(" solution with a SSE = {:2.4E}", solution.value);
+    for i in 0..solution.position.len() {
+        println!("{:2.4E} ", solution.position[i]);
+    }
     assert_eq!(1,0);
 }
 
