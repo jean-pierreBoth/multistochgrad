@@ -40,22 +40,22 @@ pub struct StochasticControlledGradientDescent {
     mini_batch_size_init : usize,
     // B_0 in Paper
     large_batch_size_init: usize,
-    // T in paper.
-    max_iterations: Option<usize>,
+    //
+    batch_growing_factor: f64,
 }
 
 impl  StochasticControlledGradientDescent {
-    pub fn new(m_zero: f64, mini_batch_size : usize, large_batch_size_init: usize, batch_growing_factor : f64) -> StochasticControlledGradientDescent {
+    pub fn new(m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: usize, batch_growing_factor : f64) -> StochasticControlledGradientDescent {
         //
-        trace!(" mini batch size {:?} , large_batch_size_init {:?}, batch_growing_factor {:2.4E}", mini_batch_size, large_batch_size_init, batch_growing_factor);
+        trace!(" mini batch size {:?} , large_batch_size_init {:?}, batch_growing_factor {:2.4E}", mini_batch_size_init, large_batch_size_init, batch_growing_factor);
         //
         StochasticControlledGradientDescent {
             rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
             m_zero : m_zero,
-            mini_batch_size_init : mini_batch_size,
+            mini_batch_size_init : mini_batch_size_init,
             large_batch_size_init : large_batch_size_init,
-            max_iterations : None,
             // alfa in the paper.
+            batch_growing_factor : batch_growing_factor,
         }
     }
     /// Seeds the random number generator using the supplied `seed`.
@@ -88,26 +88,26 @@ impl  StochasticControlledGradientDescent {
 
 
     ///
-    pub fn get_batch_size_at_jstep(&self, batch_growing_factor : f64, j: usize) -> BatchSizeInfo {
+    pub fn get_batch_size_at_jstep(&self, batch_growing_factor : f64, nbterms : usize, j: usize) -> BatchSizeInfo {
         let alfa_j = batch_growing_factor.powi(j as i32);
         BatchSizeInfo {
             _step : j,
-            large_batch : self.large_batch_size_init * (alfa_j * alfa_j).ceil() as usize,
-            mini_batch : ((self.mini_batch_size_init as f64) * alfa_j).floor() as usize,
+            large_batch : (self.large_batch_size_init * (alfa_j * alfa_j).ceil() as usize).min(nbterms),
+            mini_batch : (((self.mini_batch_size_init as f64) * alfa_j).floor() as usize).min(nbterms),
             nb_mini_batch_parameter : self.m_zero * alfa_j,
         }
     } // end of get_batch_size_at_jstep
     ///
     fn get_step_size_at_jstep(&self, j:usize) -> f64 {
         let step_size = 1./(1+j) as f64;
-        step_size
+        step_size.sqrt()
     }
     /// 
     /// sample number of mini batch according to geometric law of parameter p = b_j/(m_j+b_j) 
     /// with law : P(N=k) = (1-p) * p^k. (proba of nb trial before success mode)
-    fn sample_nb_small_mini_batches(&self, j : usize, batch_growing_factor : f64, rng : &mut Xoshiro256PlusPlus) -> usize {
+    fn sample_nb_small_mini_batches(&self, batch_size_info : &BatchSizeInfo,
+                rng : &mut Xoshiro256PlusPlus) -> usize {
         let mut n_j = 1;
-        let batch_size_info : BatchSizeInfo = self.get_batch_size_at_jstep(batch_growing_factor, j);
         let m_j =  batch_size_info.nb_mini_batch_parameter as f64;
         let b_j = batch_size_info.mini_batch as f64;
         let p : f64 = m_j/(m_j+b_j);
@@ -129,7 +129,7 @@ impl  StochasticControlledGradientDescent {
 #[allow(dead_code)]
 // if size_asked > size_in all terms are accepted, we get a full gradient!
 fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
-        let mut out_terms = Vec::<usize>::with_capacity(size_asked);
+        let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
         // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
         // https://bastian.rieck.me/blog/posts/2017/selection_sampling/
         let mut t : usize = 0;
@@ -156,7 +156,7 @@ fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], 
 // but it can be useful as it enables call with a range and thus avoid passing reference to large slice!
 // if size_asked > size_in all terms are accepted, we get a full gradient!
 fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterator<Item=usize>, size_in : usize, rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
-    let mut out_terms = Vec::<usize>::with_capacity(size_asked);
+    let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(size_in));
     let mut xsi : f64;
     for t in  in_terms.into_iter() {
         xsi = rand_distr::Standard.sample(rng);
@@ -172,7 +172,7 @@ fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterato
 impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
     type Solution = Solution;
 
-    fn minimize(&mut self, function: &F, initial_position: Vec<f64>) -> Solution {
+    fn minimize(&self, function: &F, initial_position: Vec<f64>, nb_max_iterations : usize) -> Solution {
         let mut position = initial_position;
         let dimension = position.len();
         let mut value = function.value(&position);
@@ -190,16 +190,12 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
         let mut iteration : usize = 0;
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
-        // estimate of batch growing factor versus number of steps upper bound and nbterms
-        let nb_max_iterations = match self.max_iterations {
-            Some(n)  => n, 
-             _      =>  nb_terms / 10,
-            };
+        trace!("nb_max_iterations {:?}", nb_max_iterations);
         let batch_growing_factor = self.estimate_batch_growing_factor(nb_max_iterations, function.terms());
 
         loop {
             // get iteration parameters
-            let iter_params = self.get_batch_size_at_jstep(batch_growing_factor, iteration);
+            let iter_params = self.get_batch_size_at_jstep(batch_growing_factor, nb_terms, iteration);
             // sample large batch of size Bj
             let large_batch_indexes = sample_without_replacement_iter(iter_params.large_batch, 0..nb_terms, nb_terms, & mut rng);
             trace!("\n iter {:?} got large batch size {:?}, mini batch param {:2.4E}", 
@@ -209,11 +205,11 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             let position_before_mini_batch = position.clone();
             let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
-            let n_j = self.sample_nb_small_mini_batches(iteration, batch_growing_factor, &mut rng);
+            let n_j = self.sample_nb_small_mini_batches(&iter_params, &mut rng);
             // loop on small batch iterations
             for _k in 0..n_j {
                 // sample mini batch terms
-                let terms = sample_without_replacement_iter(n_j, 0..nb_terms, nb_terms, &mut rng);
+                let terms = sample_without_replacement_iter(iter_params.mini_batch, 0..nb_terms, nb_terms, &mut rng);
                 trace!("\n  got mini batch size {:?}", terms.len());
                 let mini_batch_gradient_current = function.partial_gradient(&position_during_mini_batches, &terms);
                 let mini_batch_gradient_origin = function.partial_gradient(&position_before_mini_batch, &terms);
@@ -241,18 +237,9 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
                 debug!("Iteration {:?}  y = {:2.4E}", iteration, value);
             }
             // convergence control or max iterations control
-            if let Some(max_iterations) = self.max_iterations {
-                if iteration >= max_iterations {
+            if iteration >= nb_max_iterations {
                     info!("Reached maximal number of iterations required , stopping optimization");
                     return Solution::new(position, value);
-                }
-            }
-            else {
-                // devise something else
-                if iteration >= 100 {
-                    info!("Reached default number  of iterations required  {:?} , stopping optimization", 100);
-                    return Solution::new(position, value);
-                }
             }
         } // end global loop
 

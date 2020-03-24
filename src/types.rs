@@ -79,6 +79,8 @@ pub trait SummationC1: Summation + FunctionC1 {
                 *g += gi;
             }
         }
+        //
+        gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         gradient
     } // end partial_gradient
 }    // end trait SummationC1
@@ -94,6 +96,8 @@ impl<S: SummationC1> FunctionC1 for S {
                 *g += gi;
             }
         }
+        //
+        gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         gradient
     }
 }
@@ -106,7 +110,7 @@ pub trait Minimizer<F: ?Sized> {
 
     /// Performs the actual minimization and returns a solution that
     /// might be better than the initially provided one.
-    fn minimize(&self, function: &F, initial_position: Vec<f64>) -> Self::Solution;
+    fn minimize(&self, function: &F, initial_position: Vec<f64>, nbiter:usize) -> Self::Solution;
 }
 
 
