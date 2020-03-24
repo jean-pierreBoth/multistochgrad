@@ -59,7 +59,7 @@ simdeez = {version = "0.6", doc = false}
 cpu-time = {version = "0.1", doc = false}
 time = {version = "0.1.39",  doc = false}
 
-ndarray = {version = "0.12", doc = false}
+ndarray = {version = "0.13", doc = false}
 
 clap = {version = "2.29", doc = false}
 #  for hashing . hashbrown still needed beccause of get_key_value(&key)

@@ -12,6 +12,7 @@ extern crate lazy_static;
 
 pub mod types;
 pub mod scsg;
+pub mod mnist;
 
 
 lazy_static! {
