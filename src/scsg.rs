@@ -210,7 +210,6 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             for _k in 0..n_j {
                 // sample mini batch terms
                 let terms = sample_without_replacement_iter(iter_params.mini_batch, 0..nb_terms, nb_terms, &mut rng);
-                trace!("\n  got mini batch size {:?}", terms.len());
                 let mini_batch_gradient_current = function.partial_gradient(&position_during_mini_batches, &terms);
                 let mini_batch_gradient_origin = function.partial_gradient(&position_before_mini_batch, &terms);
                 for i in 0..dimension {
@@ -247,16 +246,4 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
 }  // end impl impl<F: Summation1> Minimizer<F>
 
 
-#[cfg(test)]
 
-mod tests {
-
-use super::*;
-
-#[test]
-
-fn test_geometric_law() {
-
-}
-
-}  // end of mod tests
