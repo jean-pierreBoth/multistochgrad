@@ -83,7 +83,20 @@ pub trait SummationC1: Summation + FunctionC1 {
         gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         gradient
     } // end partial_gradient
+
+
+    /// in stochastic gradient we need means of gradient on batch or minibatch
+    fn mean_partial_gradient(&self, position: &[f64], terms: &[usize]) -> Vec<f64> {
+        let mut gradient = self.partial_gradient(position, terms);
+        gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
+        gradient
+    }  // end of mean_partial_gradient
+
+
 }    // end trait SummationC1
+
+
+
 
 
 impl<S: SummationC1> FunctionC1 for S {
@@ -100,7 +113,9 @@ impl<S: SummationC1> FunctionC1 for S {
         gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         gradient
     }
-}
+
+    
+}  // end of impl<S: SummationC1> FunctionC1 for S
 
 
 /// Defines an optimizer that is able to minimize a given objective function `F`.
