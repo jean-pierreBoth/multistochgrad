@@ -17,6 +17,10 @@ extern crate multistochgrad;
 use rand_distr::{Normal, Distribution};
 use rand::random;
 
+use ndarray::prelude::*;
+
+use ndarray::{Array, Zip};
+
 use multistochgrad::scsg::*;
 use multistochgrad::types::*;
 
@@ -26,15 +30,20 @@ fn test_line_regression() {
 
     log::set_max_level(log::LevelFilter::Trace);
     // the true coefficients of our linear model
-    let true_coefficients = &[13.37, -4.2, 3.14];
+    let true_coefficients = vec![13.37, -4.2, 3.14];
 
     println!("Trying to approximate the true linear regression coefficients {:?} using SGD \
         given 100 noisy samples", true_coefficients);
 
+    let true_coefficients_arr = Array1::<f64>::from(true_coefficients);
     let normal = Normal::new(0., 1.).unwrap();
     let noisy_observations = (0..100).map(|_| {
-        let x = random::<[f64; 2]>();
-        let y = linear_regression(true_coefficients, &x) +
+        let mut v = Vec::<f64>::with_capacity(3);
+        v.push(1.);
+        v.push(random::<f64>());
+        v.push(random::<f64>());
+        let x = Array1::<f64>::from(v);
+        let y = linear_regression(&true_coefficients_arr, &x) +
                 normal.sample(&mut rand::thread_rng());
         (x.iter().cloned().collect(), y)
     }).collect();
@@ -47,8 +56,9 @@ fn test_line_regression() {
     };
     // m_0, b_0 , B_0, alfa
     let nb_iter = 100;
-    let solution = StochasticControlledGradientDescent::new(1., 1, 100, 1.1)
-        .minimize(&sse, vec![1.0; true_coefficients.len()], nb_iter);
+    let scgd_pb = StochasticControlledGradientDescent::new(1., 1, 100, 1.1);
+
+    let solution = scgd_pb.minimize(&sse, &true_coefficients_arr, nb_iter);
 
     println!(" solution with a SSE = {:2.4E}", solution.value);
     for i in 0..solution.position.len() {
@@ -59,38 +69,34 @@ fn test_line_regression() {
 
 
 // the sum squared error measure we want to minimize over a set of observations
-struct SSE {
-    observations: Vec<(Vec<f64>, f64)>
+struct SSE<Ix1> {
+    observations: Vec<(Array<f64, Ix1>, f64)>
 }
 
-impl Summation for SSE {
+impl Summation<Ix1> for SSE<Ix1> {
     fn terms(&self) -> usize {
         self.observations.len()
     }
-    fn term_value(&self, w: &[f64], i: usize) -> f64 {
+    fn term_value(&self, w: &Array1<f64>, i: usize) -> f64 {
         let (ref x, y) = self.observations[i];
         0.5 * (y - linear_regression(w, x)).powi(2)
     }
 }
 
-impl SummationC1 for SSE {
-    fn term_gradient(&self, w: &[f64], i: &usize) -> Vec<f64> {
+impl SummationC1<Ix1> for SSE<Ix1> {
+    fn term_gradient(&self, w: &Array1<f64>, i: &usize, gradient : &mut Array1<f64>)  {
         let (ref x, y) = self.observations[*i];
         let e = y - linear_regression(w, x);
-        let mut gradient = vec![e * -1.0];
-        for x in x {
-            gradient.push(e * -x);
-        }
-        gradient
+        // gradient is -e * x. par_apply uses rayon.
+        Zip::from(gradient).and(x).par_apply(| g, &xv| *g = xv * (-e));
     }
 }
 
 
-// a simple linear regression model, i.e., f(x) = w_0 + w_1*x_1 + w_2*x_2 + ...
-fn linear_regression(w: &[f64], x: &[f64]) -> f64 {
-    let mut y = w[0];
-    for (w, x) in w[1..].iter().zip(x) {
-        y += w * x;
-    }
+// a simple linear regression model, i.e., f(x) = w_0 * x_0 + w_1*x_1 + w_2*x_2 + ...
+// with x_0 set to 1. !!
+fn linear_regression(w: &Array1<f64> , x: &Array1<f64>) -> f64 {
+    assert_eq!(w.len() , x.len());
+    let y = w.dot(x);
     y
 }

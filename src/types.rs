@@ -4,49 +4,53 @@
 // beccause we want access to the type Solution
 
 
+use ndarray::{Array, Dimension};
 
 
-/// Defines an objective function `f` that is subject to minimization.
-///
-/// For convenience every function with the same signature as `value()` qualifies as
-/// an objective function, e.g., minimizing a closure is perfectly fine.
-pub trait Function {
+// Defines an objective function `f` that is subject to minimization.
+//
+pub trait Function<D:Dimension> {
     /// Computes the objective function at a given `position` `x`, i.e., `f(x) = y`.
-    fn value(&self, position: &[f64]) -> f64;
+    fn value(&self, position: &ndarray::Array<f64,D>) -> f64;
 }
 
 
-/// New-type to support optimization of arbitrary functions without requiring
+/// New-type to support optimization of real functions without requiring
 /// to implement a trait.
-pub struct Func<F: Fn(&[f64]) -> f64>(pub F);
+// pub struct Func<D,F> 
+//        where  F : Fn(&Array<f64,D>) -> f64,
+//        D : Dimension
+// {
+//     pub f : F,
+// }
 
-impl<F: Fn(&[f64]) -> f64> Function for Func<F> {
-    fn value(&self, position: &[f64]) -> f64 {
-        self.0(position)
-    }
-}
+// impl<D : Dimension, F: Fn(&Array<f64,D>) -> f64> Function<D> for Func<D, F> {
+//     fn value(&self, position: &Array<f64,D>) -> f64 {
+//         (self.f)(position)
+//     }
+// }
 
 
 /// Defines an objective function `f` that is able to compute the first derivative
 /// `f'(x)`.
-pub trait FunctionC1: Function {
+pub trait FunctionC1<D:Dimension> : Function<D> {
     /// Computes the gradient of the objective function at a given `position` `x`,
     /// i.e., `∀ᵢ ∂/∂xᵢ f(x) = ∇f(x)`.
-    fn gradient(&self, position: &[f64]) -> Vec<f64>;
+    fn gradient(&self, position: &Array<f64,D>) -> Array<f64,D>;
 }
 
 
 /// Defines a summation of individual functions, i.e., f(x) = ∑ᵢ fᵢ(x).
-pub trait Summation: Function {
+pub trait Summation<D:Dimension>: Function<D> {
     /// Returns the number of individual functions that are terms of the summation.
     fn terms(&self) -> usize;
 
     /// Comptues the value of one individual function indentified by its index `term`,
     /// given the `position` `x`.
-    fn term_value(&self, position: &[f64], term: usize) -> f64;
+    fn term_value(&self, position: &Array<f64,D>, term: usize) -> f64;
 
     /// Computes the partial sum over a set of individual functions identified by `terms`.
-    fn partial_value(&self, position: &[f64], terms: &[usize]) -> f64 {
+    fn partial_value(&self, position:&Array<f64,D> , terms: &[usize]) -> f64 {
         let mut value = 0.0;
         for term in terms {
             value += self.term_value(position, *term);
@@ -56,8 +60,8 @@ pub trait Summation: Function {
 } // end trait Summation
 
 
-impl<S: Summation> Function for S {
-    fn value(&self, position: &[f64]) -> f64 {
+impl<D : Dimension, S: Summation<D> > Function<D> for S {
+    fn value(&self, position: &Array<f64,D>) -> f64 {
         self.partial_value(position, &(0..self.terms()).into_iter().collect::<Vec<usize>>())
     }
 }
@@ -65,31 +69,34 @@ impl<S: Summation> Function for S {
 
 /// Defines a summation of individual functions `fᵢ(x)`, assuming that each function has a first
 /// derivative.
-pub trait SummationC1: Summation + FunctionC1 {
+pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
     /// Computes the gradient of one individual function identified by `term` at the given
     /// `position`.
-    fn term_gradient(&self, position: &[f64], term: &usize) -> Vec<f64>;
+    fn term_gradient(&self, position: &Array<f64, D>, term: &usize, gradient : &mut Array<f64, D>);
 
+    // gradient is passed as arg to avoid reaalocation!
     /// Computes the partial gradient over a set of `terms` at the given `position`.
-    fn partial_gradient(&self, position: &[f64], terms: &[usize]) -> Vec<f64> {
-        let mut gradient = vec![0.0; position.len()];
+    fn partial_gradient(&self, position: &Array<f64, D>, terms: &[usize], gradient : &mut Array<f64, D>) {
+        gradient.fill(0.);
+        let mut term_gradient : Array<f64, D> = position.clone();
         // could Rayon // here if length of iterator i.e dimension dimension of data is very large.
         for term in terms.into_iter() {
-            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, &term)) {
+            self.term_gradient(position, &term, &mut term_gradient);
+            // this loop can be //
+            for (g, gi) in gradient.iter_mut().zip(term_gradient.into_iter()) {
                 *g += gi;
             }
         }
         //
         gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
-        gradient
-    } // end partial_gradient
+     } // end partial_gradient
 
 
     /// in stochastic gradient we need means of gradient on batch or minibatch
-    fn mean_partial_gradient(&self, position: &[f64], terms: &[usize]) -> Vec<f64> {
-        let mut gradient = self.partial_gradient(position, terms);
+    fn mean_partial_gradient(&self, position: &Array<f64, D>, terms: &[usize], gradient : &mut Array<f64, D>)  {
+        gradient.fill(0.);
+        self.partial_gradient(position, terms, gradient);
         gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
-        gradient
     }  // end of mean_partial_gradient
 
 
@@ -99,14 +106,17 @@ pub trait SummationC1: Summation + FunctionC1 {
 
 
 
-impl<S: SummationC1> FunctionC1 for S {
-    fn gradient(&self, position: &[f64]) -> Vec<f64> {
-        let dimension = position.len();
-        let mut gradient = vec![0.0; dimension];
+impl<D:Dimension, S: SummationC1<D> > FunctionC1<D> for S {
+    fn gradient(&self, position: &Array<f64, D>) -> Array<f64, D> {
+        let mut gradient : Array<f64, D> = position.clone();
+        gradient.fill(0.);
+        let mut gradient_term : Array<f64, D> = position.clone();
+        gradient_term.fill(0.);
         // CAVEAT to //
         for term in 0..self.terms() {
-            for (g, gi) in gradient.iter_mut().zip(self.term_gradient(position, &term)) {
-                *g += gi;
+            self.term_gradient(position, &term, &mut gradient_term);
+            for (g, gi) in gradient.iter_mut().zip(&gradient_term) {
+            *g += gi;
             }
         }
         //
@@ -119,20 +129,20 @@ impl<S: SummationC1> FunctionC1 for S {
 
 
 /// Defines an optimizer that is able to minimize a given objective function `F`.
-pub trait Minimizer<F: ?Sized> {
+pub trait Minimizer<D: Dimension, F: ?Sized> {
     /// Type of the solution the `Minimizer` returns.
-    type Solution: Evaluation;
+    type Solution: Evaluation<D>;
 
     /// Performs the actual minimization and returns a solution that
     /// might be better than the initially provided one.
-    fn minimize(&self, function: &F, initial_position: Vec<f64>, nbiter:usize) -> Self::Solution;
+    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, nbiter:usize) -> Self::Solution;
 }
 
 
 /// Captures the essence of a function evaluation.
-pub trait Evaluation {
+pub trait Evaluation<D:Dimension> {
     /// Position `x` with the lowest corresponding value `f(x)`.
-    fn position(&self) -> &[f64];
+    fn position(&self) -> &Array<f64,D>;
 
     /// The actual value `f(x)`.
     fn value(&self) -> f64;
@@ -144,16 +154,16 @@ pub trait Evaluation {
 /// Each `Minimizer` might yield different types of solution structs which provide more
 /// information.
 #[derive(Debug, Clone)]
-pub struct Solution {
+pub struct Solution<D:Dimension> {
     /// Position `x` of the lowest corresponding value `f(x)` that has been found.
-    pub position: Vec<f64>,
+    pub position: Array<f64,D>,
     /// The actual value `f(x)`.
     pub value: f64
 }
 
-impl Solution {
+impl <D:Dimension> Solution<D> {
     /// Creates a new `Solution` given the `position` as well as the corresponding `value`.
-    pub fn new(position: Vec<f64>, value: f64) -> Solution {
+    pub fn new(position: Array<f64,D>, value: f64) -> Solution<D> {
         Solution {
             position: position,
             value: value
@@ -161,8 +171,8 @@ impl Solution {
     }
 }
 
-impl Evaluation for Solution {
-    fn position(&self) -> &[f64] {
+impl <D:Dimension> Evaluation<D> for Solution<D> {
+    fn position(&self) -> &Array<f64,D> {
         &self.position
     }
 

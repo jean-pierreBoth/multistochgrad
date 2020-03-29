@@ -52,14 +52,16 @@ nng = {version = "0.5", doc = false}
 crossbeam-utils = "0.4"
 crossbeam-channel = "0.2"
 parking_lot = "0.6"
-rayon = {version = "0.9.0",  doc = false}
+
+rayon = {version = "1.3",  doc = false}
+
 num_cpus = {version = "1.8.0", doc = false}
 simdeez = {version = "0.6", doc = false}
 
 cpu-time = {version = "0.1", doc = false}
 time = {version = "0.1.39",  doc = false}
 
-ndarray = {version = "0.13", doc = false}
+ndarray = {version = "0.13", doc = false, features=["rayon"]}
 
 clap = {version = "2.29", doc = false}
 #  for hashing . hashbrown still needed beccause of get_key_value(&key)
@@ -76,3 +78,6 @@ hdf5-sys = {version="0.5", doc = false}
 # decreasing order of log for release build (release_max_level_)  .. idem
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
 env_logger = { version = "0.7"}
+
+
+

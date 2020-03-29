@@ -8,6 +8,7 @@ use rand::{SeedableRng};
 use rand::distributions::{Distribution};
 // a fast but non crypto secure algo. method jump to use in // !!!!
 use rand_xoshiro::Xoshiro256PlusPlus;
+use ndarray::{Array, Dimension};
 
 use crate::types::*;
 
@@ -169,17 +170,15 @@ fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterato
 
 
 
-impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
-    type Solution = Solution;
+impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGradientDescent {
+    type Solution = Solution<D>;
 
-    fn minimize(&self, function: &F, initial_position: Vec<f64>, nb_max_iterations : usize) -> Solution {
-        let mut position = initial_position;
-        let dimension = position.len();
+    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, nb_max_iterations : usize) -> Solution<D> {
+        let mut position = initial_position.clone();
         let mut value = function.value(&position);
-        let mut direction : Vec<f64> = Vec::with_capacity(dimension);
-        for _ in 0..dimension {
-            direction.push(0.);
-        } 
+        // direction propagation
+        let mut direction : Array<f64, D> = position.clone();
+        direction.fill(0.);
 
         if log_enabled!(Info) {
             info!("Starting with y = {:e} for x = {:?}", value, position);
@@ -192,7 +191,18 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
         let nb_terms = function.terms();
         trace!("nb_max_iterations {:?}", nb_max_iterations);
         let batch_growing_factor = self.estimate_batch_growing_factor(nb_max_iterations, function.terms());
-
+        // temporary gradients passed by ref to avoid possibly large reallocation
+        let mut large_batch_gradient: Array<f64, D> = position.clone();
+        large_batch_gradient.fill(0.);
+        //
+        let mut  mini_batch_gradient_current : Array<f64, D>;
+        mini_batch_gradient_current = position.clone();
+        mini_batch_gradient_current.fill(0.);
+        //
+        let mut  mini_batch_gradient_origin : Array<f64, D>;
+        mini_batch_gradient_origin = position.clone();
+        mini_batch_gradient_origin.fill(0.);  
+        // now we work      
         loop {
             // get iteration parameters
             let iter_params = self.get_batch_size_at_jstep(batch_growing_factor, nb_terms, iteration);
@@ -201,7 +211,7 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             trace!("\n iter {:?} got large batch size {:?}, mini batch param {:2.4E}", 
                     iteration, large_batch_indexes.len(), iter_params.nb_mini_batch_parameter);
             // compute gradient on large batch index set and store initial position
-            let large_batch_gradient = function.partial_gradient(&position, &large_batch_indexes);
+            function.partial_gradient(&position, &large_batch_indexes, &mut large_batch_gradient);
             let position_before_mini_batch = position.clone();
             let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
@@ -210,20 +220,14 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             for _k in 0..n_j {
                 // sample mini batch terms
                 let terms = sample_without_replacement_iter(iter_params.mini_batch, 0..nb_terms, nb_terms, &mut rng);
-                let mini_batch_gradient_current = function.partial_gradient(&position_during_mini_batches, &terms);
-                let mini_batch_gradient_origin = function.partial_gradient(&position_before_mini_batch, &terms);
-                for i in 0..dimension {
-                    direction[i] = mini_batch_gradient_current[i] - mini_batch_gradient_origin[i] + large_batch_gradient[i];
-                }
+                function.partial_gradient(&position_during_mini_batches, &terms, &mut mini_batch_gradient_current);
+                function.partial_gradient(&position_before_mini_batch, &terms, &mut mini_batch_gradient_origin);
+                direction = &mini_batch_gradient_current - &mini_batch_gradient_origin + &large_batch_gradient;
                 // step into the direction of the negative gradient
-                for i in 0..dimension  {
-                    position_during_mini_batches[i] -= self.get_step_size_at_jstep(iteration) * direction[i];
-                }
+                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
             } // end mini batch loop
             // update position
-            for i in 0..dimension {
-                position[i] = position_during_mini_batches[i];
-            }
+            position = position_during_mini_batches.clone();
             iteration += 1;
 
             value = function.value(&position);
@@ -237,8 +241,8 @@ impl<F: SummationC1> Minimizer<F> for  StochasticControlledGradientDescent {
             }
             // convergence control or max iterations control
             if iteration >= nb_max_iterations {
-                    info!("Reached maximal number of iterations required , stopping optimization");
-                    return Solution::new(position, value);
+                info!("Reached maximal number of iterations required , stopping optimization");
+                return Solution::new(position, value);
             }
         } // end global loop
 
