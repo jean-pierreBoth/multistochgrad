@@ -1,5 +1,6 @@
 //! A Rust implementation of Lei-Jordan paper 
-//! On the adaptativity of Stochastic gradient based optiimization 
+//! On the adaptativity of Stochastic gradient based optiimization
+//! https://arxiv.org/abs/1904.04480
 
 use log::Level::*;
 use log::{debug, info, warn, trace, log_enabled};
@@ -211,7 +212,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
             trace!("\n iter {:?} got large batch size {:?}, mini batch param {:2.4E}", 
                     iteration, large_batch_indexes.len(), iter_params.nb_mini_batch_parameter);
             // compute gradient on large batch index set and store initial position
-            function.partial_gradient(&position, &large_batch_indexes, &mut large_batch_gradient);
+            function.mean_partial_gradient(&position, &large_batch_indexes, &mut large_batch_gradient);
             let position_before_mini_batch = position.clone();
             let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
@@ -220,8 +221,8 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
             for _k in 0..n_j {
                 // sample mini batch terms
                 let terms = sample_without_replacement_iter(iter_params.mini_batch, 0..nb_terms, nb_terms, &mut rng);
-                function.partial_gradient(&position_during_mini_batches, &terms, &mut mini_batch_gradient_current);
-                function.partial_gradient(&position_before_mini_batch, &terms, &mut mini_batch_gradient_origin);
+                function.mean_partial_gradient(&position_during_mini_batches, &terms, &mut mini_batch_gradient_current);
+                function.mean_partial_gradient(&position_before_mini_batch, &terms, &mut mini_batch_gradient_origin);
                 direction = &mini_batch_gradient_current - &mini_batch_gradient_origin + &large_batch_gradient;
                 // step into the direction of the negative gradient
                 position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
