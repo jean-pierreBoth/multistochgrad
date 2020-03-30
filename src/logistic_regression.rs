@@ -19,7 +19,7 @@ use crate::types::*;
 struct LogisticRegression {
     nbclass : usize,
     // length of observation + 1. Values 1. in slot 0 of arrays.
-    observations: Vec<(Array1<f64>, u64)>,
+    observations: Vec<(Array1<f64>, usize)>,
     /// As ndarray is by default with C storage (row oriented) we use the following scheme for storing data
     /// a row is coefficient array corresponding to (1 augmented observations)
     /// a column is coefficients by class.
@@ -45,7 +45,8 @@ impl Summation<Ix2> for LogisticRegression {
             //        let dot_i = x.dot(&coefficients.index_axis(Axis(0),i));
             log_arg += dot_i.exp();
         }
-        let other_term = x.dot(&coefficients.slice(s![term, ..]));
+        // keep term corresponding to term_class (class of term passed as arg)
+        let other_term = x.dot(&coefficients.slice(s![term_class, ..]));
         let t_value = log_arg.ln() - other_term;
         t_value
     } // end of term_value
@@ -70,7 +71,8 @@ impl SummationC1<Ix2> for LogisticRegression {
             let dot_k : f64 = x.dot(&w.slice(s![k, ..]));
             for j in 0..x.len() {
                 g_term = x[j] * dot_k/den;
-                if *term == k {
+                // keep term corresponding to term_class (class of term passed as arg)
+               if term_class == k {
                     g_term -= x[j] * w[[k,j]];
                 } 
                 gradient[[k, j]] = g_term;

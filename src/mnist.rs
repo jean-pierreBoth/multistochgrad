@@ -8,7 +8,7 @@ use std::path::{PathBuf};
 
 /// A struct to load/store http://yann.lecun.com/exdb/mnist/
 /// train-labels-idx1-ubyte  digits between 0 and 9
-/// ans hand written characters as 28*28 images with values between 0 and 255 train-images-idx3-ubyte
+/// ans hand written characters as 28*28 images with values between 0 and 255  train-images-idx3-ubyte
 pub struct MnistData {
     _image_filename : String,
     _label_filename : String,
@@ -36,7 +36,16 @@ impl MnistData {
         } )
     } // end of new for MnistData
 
+    /// returns labels of images. lables[k] is the label of the k th image.
+    pub fn get_labels(&self) -> &Array1::<u8> {
+        &self.labels
+    }
 
+    /// returns images. images are stored in Array3 with Array3[[.., .., k]] being the k images!
+    /// Each image is stored as it is in the Mnist files, Array3[[i, .., k]] is the i row of the k image
+    pub fn get_images(&self) -> &Array3::<u8> {
+        &self.images
+    }
 } // end of impl MnistData
 
 
