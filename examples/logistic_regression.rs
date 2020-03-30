@@ -7,7 +7,7 @@ extern crate rand;
 extern crate rand_distr;
 extern crate multistochgrad;
 
-use ndarray::{Array3, Array1, s};
+use ndarray::prelude::*;
 
 use rand_distr::{Normal, Distribution};
 use rand::random;
@@ -17,19 +17,36 @@ use multistochgrad::types::*;
 
 
 
-// the sum squared error measure we want to minimize over a set of observations
-// value of observation is discrete
-struct ClassifData {
-    observations: Vec<(Array1<f64>, u64)>
+//  data dimension have been augmented by one for interception term.
+//  The coefficients of the last class have been assumed to be 0 to take into account
+//  for the identifiability constraint (Cf Less Than a Single Pass SCSG Lei-Jordan or 
+//  Machine Learning Murphy par 9.2.2.1-2
+//
+struct ClassificationLogistic {
+    nbclass : usize,
+    // length of observation + 1. Values 1. in slot 0 of arrays.
+    observations: Vec<(Array1<f64>, u64)>,
+    // one vector by class for all classes except the last.
+    coefficients : Vec<Array1<f64>>
 }
 
-impl Summation for SSE {
+
+
+impl Summation<Ix1> for ClassificationLogistic {
     fn terms(&self) -> usize {
         self.observations.len()
     }
-    fn term_value(&self, w: &[f64], i: usize) -> f64 {
-        let (ref x, y) = self.observations[i];
-        0.5 * (y - linear_regression(w, x)).powi(2)
+    //
+    fn term_value(&self, coefficients : &Array1<f64> , term: usize) -> f64 {
+        let (ref x, term_class) = self.observations[term];
+        let mut log_arg = 1.0f64; //////////////!!!
+        for i in 0..self.nbclass-1 {
+            let dot_i = x.dot(coefficients);
+            log_arg += dot_i.exp();
+        }
+        let other_term = x.dot(coefficients);
+        let t_value = log_arg.ln() - other_term;
+        t_value
     }
 }
 
@@ -46,11 +63,16 @@ impl SummationC1 for SSE {
 }
 
 
-// a simple linear regression model, i.e., f(x) = w_0 + w_1*x_1 + w_2*x_2 + ...
-fn linear_regression(w: &[f64], x: &[f64]) -> f64 {
+/// here x is a data vector , w is 
+fn logistic_regression(w: &[f64], x: &[f64]) -> f64 {
     let mut y = w[0];
     for (w, x) in w[1..].iter().zip(x) {
         y += w * x;
     }
     y
 }
+
+
+fn main() {
+
+}  // end of main
