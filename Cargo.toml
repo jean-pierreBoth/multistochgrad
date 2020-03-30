@@ -30,7 +30,11 @@ test=true
 doc=true
 
 
-#[[example]]
+
+[[examples]]
+name = "mnist_logistic"
+path = "examples/mnist_logistic.rs"
+
 
 [dependencies]
 # default is version spec is ^ meaning can update up to max non null version number

@@ -1,6 +1,6 @@
 //!  to include necessary files
 
 
-pub use multistochgrad::scsg::*;
-pub use multistochgrad::types::*;
-pub use multistochgrad::mnist::*;
+pub use crate::scsg::*;
+pub use crate::types::*;
+pub use crate::mnist::*;

@@ -10,6 +10,7 @@ extern crate env_logger;
 #[macro_use]
 extern crate lazy_static;
 
+pub mod prelude;
 pub mod types;
 pub mod scsg;
 pub mod mnist;

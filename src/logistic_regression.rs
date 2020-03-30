@@ -4,6 +4,7 @@
 
 extern crate rand;
 extern crate rand_distr;
+use std::io::prelude::*;
 
 use ndarray::prelude::*;
 
@@ -16,17 +17,26 @@ use crate::types::*;
 //  for the identifiability constraint (Cf Less Than a Single Pass SCSG Lei-Jordan or 
 //  Machine Learning Murphy par 9.2.2.1-2
 //
-struct LogisticRegression {
+pub struct LogisticRegression {
     nbclass : usize,
     // length of observation + 1. Values 1. in slot 0 of arrays.
     observations: Vec<(Array1<f64>, usize)>,
-    /// As ndarray is by default with C storage (row oriented) we use the following scheme for storing data
-    /// a row is coefficient array corresponding to (1 augmented observations)
-    /// a column is coefficients by class.
-    coefficients : Array2<f64>
+    // As ndarray is by default with C storage (row oriented) we use the following scheme for storing data
+    // a row is coefficient array corresponding to (1 augmented observations)
+    // a column is coefficients by class.
+    // coefficients : Array2<f64>
 }
 
 
+impl LogisticRegression {
+    pub fn new(nbclass : usize, observations : Vec<(Array1<f64>, usize)>) -> LogisticRegression {
+        LogisticRegression {
+            nbclass,
+            observations,
+        }
+    } // end of new
+
+} // end of impl LogisticRegression
 
 impl Summation<Ix2> for LogisticRegression {
     fn terms(&self) -> usize {

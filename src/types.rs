@@ -1,7 +1,13 @@
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
 //
-// This file is taken from the crate optimisation, with minor modifications,
-// beccause we want access to the type Solution
+//! This file is inspired by the crate optimisation written by b52@reaktor42.de
+// We kept the traits Function, FunctionC1, Summation and SummationC1
+// and changed slightly the function signatures.
+// 1. We use the crate ndarray with its dependancy rayon for //
+// 2. In batched stochastic gradient we need to define mean gradient on a subset
+//    of indexes. 
+// 3. We get rid of the iterator on indexes as indees are always usize.
+//! In fact we minimize the mean of the summation which is the same but scales gradient.
 
 
 use ndarray::{Array, Dimension};
@@ -70,8 +76,9 @@ impl<D : Dimension, S: Summation<D> > Function<D> for S {
 /// Defines a summation of individual functions `fᵢ(x)`, assuming that each function has a first
 /// derivative.
 pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
+    /// The required method the user must furnish.
     /// Computes the gradient of one individual function identified by `term` at the given
-    /// `position`.
+    /// `position`. gradient index and position indexes must corrspond.
     fn term_gradient(&self, position: &Array<f64, D>, term: &usize, gradient : &mut Array<f64, D>);
 
     // gradient is passed as arg to avoid reaalocation!
