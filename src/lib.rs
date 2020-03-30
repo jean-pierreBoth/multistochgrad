@@ -13,6 +13,7 @@ extern crate lazy_static;
 pub mod types;
 pub mod scsg;
 pub mod mnist;
+pub mod logistic_regression;
 
 
 lazy_static! {
