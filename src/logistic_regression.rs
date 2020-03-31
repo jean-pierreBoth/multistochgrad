@@ -8,6 +8,9 @@ use std::io::prelude::*;
 
 use ndarray::prelude::*;
 
+use log::Level::*;
+use log::{debug, info, warn, trace, log_enabled};
+
 use crate::types::*;
 
 
@@ -56,7 +59,10 @@ impl Summation<Ix2> for LogisticRegression {
             log_arg += dot_i.exp();
         }
         // keep term corresponding to term_class (class of term passed as arg)
-        let other_term = x.dot(&coefficients.slice(s![term_class, ..]));
+        let mut other_term = 0.;
+        if term_class <  self.nbclass-1 {
+            other_term = x.dot(&coefficients.slice(s![term_class, ..]));
+        }
         let t_value = log_arg.ln() - other_term;
         t_value
     } // end of term_value
@@ -68,6 +74,10 @@ impl SummationC1<Ix2> for LogisticRegression {
     fn term_gradient(&self, w: &Array2<f64>, term: &usize, gradient : &mut Array2<f64>) {
         // get observation corresponding to term
         let (ref x, term_class) = self.observations[*term];
+        // if log_enabled!(Trace) {
+        //     let norm = x.iter().fold(0., | acc, z  | acc + z.abs());
+        //     trace!("norm L1 observation {:2.4E}", norm);
+        // }
         //
         let mut den : f64 = 1.;
         for k in 0..self.nbclass-1 {
@@ -75,7 +85,6 @@ impl SummationC1<Ix2> for LogisticRegression {
             den += dot_k.exp();
         }
         //
-
         for k in 0..self.nbclass-1 {
             let mut g_term : f64;
             let dot_k : f64 = x.dot(&w.slice(s![k, ..]));
@@ -84,10 +93,14 @@ impl SummationC1<Ix2> for LogisticRegression {
                 // keep term corresponding to term_class (class of term passed as arg)
                if term_class == k {
                     g_term -= x[j] * w[[k,j]];
-                } 
+                }
                 gradient[[k, j]] = g_term;
             }
         }
+        // if log_enabled!(Trace) {
+        //     let norm = gradient.iter().fold(0., | acc, x  | acc + x.abs());
+        //     trace!("norm L1 gradient {:2.4E}", norm);
+        // }
     }  // end of term_gradient
 }
 

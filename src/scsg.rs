@@ -236,7 +236,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
                 // compute gradient norm
                 let mut norm = direction.iter().fold(0., | acc, x  | acc + x*x);
                 norm = norm.sqrt();
-                debug!("Iteration {:?} y = {:2.4E}, | direction| = {:2.4e}", iteration, value, norm);
+                debug!("Iteration {:?} y = {:2.4E}, || direction||L2 = {:2.4e}", iteration, value, norm);
             } else {
                 debug!("Iteration {:?}  y = {:2.4E}", iteration, value);
             }
