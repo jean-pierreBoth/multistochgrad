@@ -10,11 +10,14 @@ extern crate multistochgrad;
 use std::path::{PathBuf};
 use std::fs::{OpenOptions};
 
+use std::io;
+use std::io::prelude::*;
 
 use ndarray::prelude::*;
 
-
 use multistochgrad::prelude::*;
+
+//use multistochgrad::prelude::*;
 use multistochgrad::logistic_regression::*;
 
 
@@ -54,7 +57,7 @@ fn main () {
         let index = 0;
         for i in 0..nb_row {
             for j in 0..nb_column {
-                image[index] = images[[i,j,k]] as f64;
+                image[index] = images[[i,j,k]] as f64/256.;
             }
         } // end of for i
         observations.push((image, labels[k] as usize));
@@ -64,6 +67,38 @@ fn main () {
     //
     // minimize
     //
-    // get image of coefficients to see
+       // m_0, b_0 , B_0, alfa
+    let nb_iter = 100;
+    let scgd_pb = StochasticControlledGradientDescent::new(1., 1, 100, 1.1);
+    // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
+    let initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
+    
+    let solution = scgd_pb.minimize(&regr_l, &initial_position , nb_iter);
+    println!(" solution with a SSE = {:2.4E}", solution.value);
+    //
+    // get image of coefficients to see corresponding images.
+    //
+    let image_fname = String::from("classe.img");
+    for k in 0..9 {
 
+        let mut k_image_fname : String = image_fname.clone();
+        k_image_fname.push(k as u8 as char);
+        let image_path = PathBuf::from(k_image_fname.clone());
+        let image_file_res = OpenOptions::new().write(true).open(&image_path);
+        if image_file_res.is_err() {
+            println!("could not open image file : {:?}", k_image_fname);
+            return;
+        }
+        // 
+        let mut out = io::BufWriter::new(image_file_res.unwrap());
+        // 
+        // get a f64 slice to write
+        let f64_array_to_write : &[f64]  = solution.position.slice(s![k, ..]).to_slice().unwrap();
+        let u8_slice = unsafe {  std::slice::from_raw_parts(f64_array_to_write.as_ptr() as *const u8, 
+                                            std::mem::size_of::<f64>() * f64_array_to_write.len())
+           };
+        out.write_all(u8_slice).unwrap();
+        out.flush().unwrap();
+     //   out.write(&solution.position.slice(s![k, ..])).unwrap();
+    }
 }
