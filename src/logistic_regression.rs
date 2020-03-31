@@ -4,12 +4,15 @@
 
 extern crate rand;
 extern crate rand_distr;
-use std::io::prelude::*;
 
 use ndarray::prelude::*;
 
+#[allow(unused_imports)]
 use log::Level::*;
-use log::{debug, info, warn, trace, log_enabled};
+#[allow(unused_imports)]
+use log::*;
+
+// use log::{debug, info, warn, trace, log_enabled};
 
 use crate::types::*;
 
@@ -89,10 +92,10 @@ impl SummationC1<Ix2> for LogisticRegression {
             let mut g_term : f64;
             let dot_k : f64 = x.dot(&w.slice(s![k, ..]));
             for j in 0..x.len() {
-                g_term = x[j] * dot_k/den;
+                g_term = x[j] * dot_k.exp()/den;
                 // keep term corresponding to term_class (class of term passed as arg)
                if term_class == k {
-                    g_term -= x[j] * w[[k,j]];
+                    g_term -= x[j];
                 }
                 gradient[[k, j]] = g_term;
             }
@@ -103,5 +106,4 @@ impl SummationC1<Ix2> for LogisticRegression {
         // }
     }  // end of term_gradient
 }
-
 

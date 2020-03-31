@@ -56,7 +56,7 @@ fn test_line_regression() {
     };
     // m_0, b_0 , B_0, alfa
     let nb_iter = 100;
-    let scgd_pb = StochasticControlledGradientDescent::new(1., 1, 100, 1.1);
+    let scgd_pb = StochasticControlledGradientDescent::new(1., 1, 100);
     let initial_position = Array1::<f64>::from( vec![1.0; true_coefficients_arr.len()]);
     let solution = scgd_pb.minimize(&sse, &initial_position, nb_iter);
 

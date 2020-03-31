@@ -42,22 +42,18 @@ pub struct StochasticControlledGradientDescent {
     mini_batch_size_init : usize,
     // B_0 in Paper
     large_batch_size_init: usize,
-    //
-    batch_growing_factor: f64,
 }
 
 impl  StochasticControlledGradientDescent {
-    pub fn new(m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: usize, batch_growing_factor : f64) -> StochasticControlledGradientDescent {
+    pub fn new(m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: usize) -> StochasticControlledGradientDescent {
         //
-        trace!(" mini batch size {:?} , large_batch_size_init {:?}, batch_growing_factor {:2.4E}", mini_batch_size_init, large_batch_size_init, batch_growing_factor);
+        trace!(" mini batch size {:?} , large_batch_size_init {:?}", mini_batch_size_init, large_batch_size_init);
         //
         StochasticControlledGradientDescent {
             rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
             m_zero : m_zero,
             mini_batch_size_init : mini_batch_size_init,
             large_batch_size_init : large_batch_size_init,
-            // alfa in the paper.
-            batch_growing_factor : batch_growing_factor,
         }
     }
     /// Seeds the random number generator using the supplied `seed`.
@@ -92,9 +88,10 @@ impl  StochasticControlledGradientDescent {
     ///
     pub fn get_batch_size_at_jstep(&self, batch_growing_factor : f64, nbterms : usize, j: usize) -> BatchSizeInfo {
         let alfa_j = batch_growing_factor.powi(j as i32);
+        let max_batch_size = (nbterms as f64/10.).ceil() as usize;
         BatchSizeInfo {
             _step : j,
-            large_batch : (self.large_batch_size_init * (alfa_j * alfa_j).ceil() as usize).min(nbterms),
+            large_batch : (self.large_batch_size_init * (alfa_j * alfa_j).ceil() as usize).min(max_batch_size),
             mini_batch : (((self.mini_batch_size_init as f64) * alfa_j).floor() as usize).min(nbterms),
             nb_mini_batch_parameter : self.m_zero * alfa_j,
         }
@@ -225,7 +222,8 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
                 function.mean_partial_gradient(&position_before_mini_batch, &terms, &mut mini_batch_gradient_origin);
                 direction = &mini_batch_gradient_current - &mini_batch_gradient_origin + &large_batch_gradient;
                 // step into the direction of the negative gradient
-                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
+                position_during_mini_batches = position_during_mini_batches -  &direction;
+//                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
             } // end mini batch loop
             // update position
             position = position_during_mini_batches.clone();
@@ -236,7 +234,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
                 // compute gradient norm
                 let mut norm = direction.iter().fold(0., | acc, x  | acc + x*x);
                 norm = norm.sqrt();
-                debug!("Iteration {:?} y = {:2.4E}, || direction||L2 = {:2.4e}", iteration, value, norm);
+                debug!("Iteration {:?} y = {:2.4E}, || direction||L2 = {:2.4e} large batch grad {:2.4e}", iteration, value, norm, norm_l2(&large_batch_gradient));
             } else {
                 debug!("Iteration {:?}  y = {:2.4E}", iteration, value);
             }
@@ -252,3 +250,9 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
 
 
 
+
+#[allow(dead_code)]
+fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
+    let norm = gradient.fold(0., |norm, x |  norm+ (x * x));
+    norm.sqrt()
+}
