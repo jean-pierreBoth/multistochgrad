@@ -84,8 +84,9 @@ pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
     // gradient is passed as arg to avoid reaalocation!
     /// Computes the partial gradient over a set of `terms` at the given `position`.
     fn partial_gradient(&self, position: &Array<f64, D>, terms: &[usize], gradient : &mut Array<f64, D>) {
+        assert!(terms.len() > 0);
         gradient.fill(0.);
-        let mut term_gradient : Array<f64, D> = position.clone();
+        let mut term_gradient : Array<f64, D> = gradient.clone();
         // could Rayon // here if length of iterator i.e dimension dimension of data is very large.
         for term in terms.into_iter() {
             self.term_gradient(position, &term, &mut term_gradient);

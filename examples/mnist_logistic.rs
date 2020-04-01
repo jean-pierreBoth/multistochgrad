@@ -75,7 +75,7 @@ fn main () {
     //
        // m_0, b_0 , B_0
     let nb_iter = 100;
-    let scgd_pb = StochasticControlledGradientDescent::new(1., 1, 100);
+    let scgd_pb = StochasticControlledGradientDescent::new(1., 1, 1000);
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     initial_position.fill(0.5);
@@ -88,9 +88,9 @@ fn main () {
     for k in 0..9 {
 
         let mut k_image_fname : String = image_fname.clone();
-        k_image_fname.push(k as u8 as char);
+        k_image_fname.push_str(&k.to_string());
         let image_path = PathBuf::from(k_image_fname.clone());
-        let image_file_res = OpenOptions::new().write(true).open(&image_path);
+        let image_file_res = OpenOptions::new().write(true).create(true).open(&image_path);
         if image_file_res.is_err() {
             println!("could not open image file : {:?}", k_image_fname);
             return;
