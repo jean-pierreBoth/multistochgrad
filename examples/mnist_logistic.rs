@@ -75,7 +75,7 @@ fn main () {
     //
        // m_0, b_0 , B_0
     let nb_iter = 100;
-    let scgd_pb = StochasticControlledGradientDescent::new(10., 1, 1000);
+    let scgd_pb = StochasticControlledGradientDescent::new(100., 1, 1000);
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     initial_position.fill(0.5);

@@ -24,7 +24,9 @@ pub struct  BatchSizeInfo {
     // mini batvh size
     mini_batch: usize,
     // nb mini bath parameter
-    nb_mini_batch_parameter : f64,   
+    nb_mini_batch_parameter : f64,
+    // step size
+    step_size : f64,
 }
 
 
@@ -101,35 +103,26 @@ impl  StochasticControlledGradientDescent {
         let mini_batch_size = ((self.mini_batch_size_init * alfa_j).floor() as usize).min(max_mini_batch_size);
         // m_j  computed to ensure mean number of mini batch ~ large_batch_size
         let nb_mini_batch_parameter = self.m_zero * alfa_j.powf(1.5);
+        let step_size = 1. / alfa_j;
         //
         BatchSizeInfo {
             _step : j,
             large_batch : large_batch_size,
             mini_batch : mini_batch_size,
             nb_mini_batch_parameter : nb_mini_batch_parameter,
+            step_size : step_size,
         }
     } // end of get_batch_size_at_jstep
-    ///
-    fn get_step_size_at_jstep(&self, _j:usize) -> f64 {
-        0.5
-    }
     /// 
     /// sample number of mini batch according to geometric law of parameter p = b_j/(m_j+b_j) 
     /// with law : P(N=k) = (1-p) * p^k. (proba of nb trial before success mode)
-    fn sample_nb_small_mini_batches(&self, batch_size_info : &BatchSizeInfo,
-                rng : &mut Xoshiro256PlusPlus) -> usize {
-        let mut n_j = 1;
+    fn get_nb_small_mini_batches(&self, batch_size_info : &BatchSizeInfo) -> usize {
         let m_j =  batch_size_info.nb_mini_batch_parameter as f64;
         let b_j = batch_size_info.mini_batch as f64;
         let p : f64 = m_j/(m_j+b_j);
         trace!(" geometric law parameter {:2.4E}", p);
-        // pass a &mut here!!
-        let mut xsi : f64 = rand_distr::Standard.sample(rng);
-        // success is when xsi is >= p !!
-        while xsi < p {
-            xsi = rand_distr::Standard.sample(rng);
-            n_j += 1;
-        }
+        // we return mean of geometric. Sampling too much instable due to large variance of geometric distribution.
+        let mut n_j = (p / (1.-p)).ceil() as usize;
         n_j = n_j.min(batch_size_info.large_batch);
         trace!(" nb small mini batch {:?} m_j {:2.4E} b_j : {:2.4E} ", n_j,  m_j, b_j);
         return n_j;
@@ -218,16 +211,18 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
         loop {
             // get iteration parameters
             let iter_params = self.get_batch_size_at_jstep(batch_growing_factor, nb_terms, iteration);
+            let step_size = iter_params.step_size;
             // sample large batch of size Bj
             let large_batch_indexes = sample_without_replacement_iter(iter_params.large_batch, 0..nb_terms, nb_terms, & mut rng);
-            trace!("\n iter {:?} got large batch size {:?}, mini batch param {:2.4E}, mini batch size {:?}", 
-                    iteration, large_batch_indexes.len(), iter_params.nb_mini_batch_parameter, iter_params.mini_batch);
+            trace!("\n iter {:?} got large batch size {:?}, mini batch param {:2.4E}, mini batch size {:?}, step {:2.4E}", 
+                    iteration, large_batch_indexes.len(), iter_params.nb_mini_batch_parameter, 
+                    iter_params.mini_batch, iter_params.step_size);
             // compute gradient on large batch index set and store initial position
             function.mean_partial_gradient(&position, &large_batch_indexes, &mut large_batch_gradient);
             let position_before_mini_batch = position.clone();
             let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
-            let n_j = self.sample_nb_small_mini_batches(&iter_params, &mut rng);
+            let n_j = self.get_nb_small_mini_batches(&iter_params);
             // loop on small batch iterations
             for _k in 0..n_j {
                 // sample mini batch terms
@@ -252,7 +247,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
                 //
                 direction = &mini_batch_gradient_current - &mini_batch_gradient_origin + &large_batch_gradient;
                 // step into the direction of the negative gradient
-                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
+                position_during_mini_batches = position_during_mini_batches - step_size * &direction;
             } // end mini batch loop
             // update position
             position = position_during_mini_batches.clone();
