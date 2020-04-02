@@ -47,7 +47,7 @@ pub struct StochasticControlledGradientDescent {
 impl  StochasticControlledGradientDescent {
     pub fn new(m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: usize) -> StochasticControlledGradientDescent {
         //
-        trace!(" mini batch size {:?} , large_batch_size_init {:?}", mini_batch_size_init, large_batch_size_init);
+        trace!(" m_zero {:?} mini batch size {:?} , large_batch_size_init {:?}", m_zero, mini_batch_size_init, large_batch_size_init);
         //
         StochasticControlledGradientDescent {
             rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
@@ -94,17 +94,24 @@ impl  StochasticControlledGradientDescent {
         let alfa_j = batch_growing_factor.powi(j as i32);
         let max_large_batch_size = (nbterms as f64/10.).ceil() as usize;
         let max_mini_batch_size = (nbterms as f64/100.).ceil() as usize;
+
+        // B_j
+        let large_batch_size = ((self.large_batch_size_init * alfa_j * alfa_j).ceil() as usize).min(max_large_batch_size);
+        // b_j  grow slowly as log(1. + )
+        let mini_batch_size = ((self.mini_batch_size_init * alfa_j).floor() as usize).min(max_mini_batch_size);
+        // m_j  computed to ensure mean number of mini batch ~ large_batch_size
+        let nb_mini_batch_parameter = self.m_zero * alfa_j.powf(1.5);
+        //
         BatchSizeInfo {
             _step : j,
-            large_batch : ((self.large_batch_size_init * alfa_j * alfa_j).ceil() as usize).min(max_large_batch_size),
-            mini_batch : ((self.mini_batch_size_init * alfa_j).floor() as usize).min(max_mini_batch_size),
-            nb_mini_batch_parameter : self.m_zero * alfa_j.powf(1.5),
+            large_batch : large_batch_size,
+            mini_batch : mini_batch_size,
+            nb_mini_batch_parameter : nb_mini_batch_parameter,
         }
     } // end of get_batch_size_at_jstep
     ///
-    fn get_step_size_at_jstep(&self, j:usize) -> f64 {
-        let step_size = 1./(1+j) as f64;
-        step_size.sqrt()
+    fn get_step_size_at_jstep(&self, _j:usize) -> f64 {
+        0.5
     }
     /// 
     /// sample number of mini batch according to geometric law of parameter p = b_j/(m_j+b_j) 
@@ -228,28 +235,24 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
                 //
                 function.mean_partial_gradient(&position_during_mini_batches, &terms, &mut mini_batch_gradient_current);
                 //
-                if log_enabled!(Trace) {
-                    assert!(norm_l2(&mini_batch_gradient_current) > 0.);
-                }
                 function.mean_partial_gradient(&position_before_mini_batch, &terms, &mut mini_batch_gradient_origin);
                 //
-                if log_enabled!(Trace)  {
-                    if _k == 0 {
-                        trace!("mini_batch_gradient_origin  L2 {:2.4E} ", norm_l2(&mini_batch_gradient_origin));
-                    }
-                    else {
-                        trace!("mini_batch_gradient_current L2 {:2.4E} ", norm_l2(&mini_batch_gradient_current));
-                        assert!(norm_l2(&mini_batch_gradient_origin) > 0.);
-                        trace!(" delta pos {:2.4E} ", norm_l2(&(&position_before_mini_batch -&position_during_mini_batches)));
-                        trace!(" delta grad {:2.4E} ", norm_l2(&(&mini_batch_gradient_current -&mini_batch_gradient_origin)));
-                    }
-                }
+                // if log_enabled!(Trace)  {
+                //     if _k == 0 {
+                //         assert!(norm_l2(&mini_batch_gradient_origin) > 0.);
+                //         trace!("mini_batch_gradient_origin  L2 {:2.4E} ", norm_l2(&mini_batch_gradient_origin));
+                //     }
+                //     else {
+                //         trace!("mini_batch_gradient_current L2 {:2.4E} ", norm_l2(&mini_batch_gradient_current));
+                //         assert!(norm_l2(&mini_batch_gradient_current) > 0.);
+                //         trace!(" delta pos {:2.4E} ", norm_l2(&(&position_before_mini_batch -&position_during_mini_batches)));
+                //         trace!(" delta grad {:2.4E} ", norm_l2(&(&mini_batch_gradient_current -&mini_batch_gradient_origin)));
+                //     }
+                // }
                 //
                 direction = &mini_batch_gradient_current - &mini_batch_gradient_origin + &large_batch_gradient;
-                trace!(" direction {:2.6E} ", norm_l2(&direction));
                 // step into the direction of the negative gradient
-                position_during_mini_batches = position_during_mini_batches -  &direction;
-//                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
+                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
             } // end mini batch loop
             // update position
             position = position_during_mini_batches.clone();
@@ -257,6 +260,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
 
             value = function.value(&position);
             if log_enabled!(Debug) {
+                trace!(" direction {:2.6E} ", norm_l2(&direction));
                 debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
             }
             // convergence control or max iterations control

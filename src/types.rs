@@ -125,6 +125,7 @@ impl<D:Dimension, S: SummationC1<D> > FunctionC1<D> for S {
             *g += gi;
             }
         }
+        gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         //
         gradient
     }
