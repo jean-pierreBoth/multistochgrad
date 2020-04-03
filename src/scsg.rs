@@ -29,32 +29,54 @@ pub struct  BatchSizeInfo {
     step_size : f64,
 }
 
-
-// m_zero should be around 2 * mini_batch_size_init 
-// we try mini batch size m_zero * alfa^j 
-//        large batch size large_batch_size_init * alfa^(2*j)
-//        
 /// Provides _stochastic_ Gradient Descent optimization
 /// as described in Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
+/// 
+///     let nbterms be the number of terms in function to minimize and j the iteration number:
+/// 
+///     large batch size  evolves as    :    nbterms * large_batch_size_init  * alfa^(2*j)
+///     number of mini batch evolves as :    m_zero *  alfa^(3*j/2)
+///     size of a mini batch evolves as : mini_batch_size_init * nbterms * alfa^(2*j)
+///      
+///     where alfa is computed to be slightly greater than 1.
+/// 
 pub struct StochasticControlledGradientDescent {
     rng: Xoshiro256PlusPlus,
-    // parameter governing evolution of inner_loop_size
+    /// step_size initialization
+    eta_zero : f64,
+    /// parameter governing evolution of inner_loop_size
     m_zero: f64,
-    // m_0 in the paper
-    mini_batch_size_init : f64,
-    // B_0 in Paper
+    /// m_0 in the paper
+    mini_batch_size_init : usize,
+    /// related to B_0 in Paper. Fraction of terms to consider in initialisation of B_0
     large_batch_size_init: f64,
 }
 
 impl  StochasticControlledGradientDescent {
-    pub fn new(m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: usize) -> StochasticControlledGradientDescent {
+    /// args are 
+    ///   - initial value of step along gradient value of 0.5 is a good fefault choice.
+    ///   - base value for large batch size : a good default value is between 0.01 and 0.1 times the
+    ///   - m_zero : a good value is 0.1 times large_batch_size_init
+    ///   - base value for size of mini_batchs : a value àf 1 is a good default choice
+    ///     number of terms in function to minimize
+    pub fn new(eta_zero : f64, m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: f64) -> StochasticControlledGradientDescent {
         //
-        trace!(" m_zero {:?} mini batch size {:?} , large_batch_size_init {:?}", m_zero, mini_batch_size_init, large_batch_size_init);
+        if large_batch_size_init >  1. {
+            warn!("large_batch_size_init > 1. , fraction factor for large_batch size initialization must be < 1. , exiting");
+            std::process::exit(1);
+        }
+        if m_zero  > large_batch_size_init {
+            warn!("m_zero > large_batch_size_init fraction , base fraction for nb mini batch should be less than for large_batch_size");
+            std::process::exit(1);
+        }
+        info!(" eta_zero {:2.4E} m_zero {:2.4} \n mini batch size {:?} , large_batch_size_init {:2.4E}", 
+            eta_zero, m_zero, mini_batch_size_init, large_batch_size_init);
         //
         StochasticControlledGradientDescent {
             rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
+            eta_zero : eta_zero,
             m_zero : m_zero,
-            mini_batch_size_init : mini_batch_size_init as f64,
+            mini_batch_size_init : mini_batch_size_init,
             large_batch_size_init : large_batch_size_init as f64,
         }
     }
@@ -69,22 +91,19 @@ impl  StochasticControlledGradientDescent {
     // For large batch sizes:
     //  1.   B_0 max(10, nbterms/100)
     //  2.   B_0 * alfa^(2T) < nbterms
-    // For the number of mini batch, we need to avoid large variances so 
-    //  1.  
     fn estimate_batch_growing_factor(&self, nb_max_iterations : usize , nbterms:usize) -> f64 {
         let batch_growing_factor : f64;
         if self.m_zero > nbterms as f64 {
             warn!("m_zero > nbterms in functio to minimize, exiting");
             std::process::exit(1);
         }
-        if self.large_batch_size_init >  nbterms as f64 {
-            warn!("large_batch_size_init > nbterms in functio to minimize, exiting");
-            std::process::exit(1);
-        }
         //
-        let log_alfa = ((nbterms as f64).ln() -self.large_batch_size_init.ln()) / (2. * nb_max_iterations as f64);
+        let log_alfa = (-self.large_batch_size_init.ln()) / (2. * nb_max_iterations as f64);
         batch_growing_factor = log_alfa.exp();
-        trace!(" upper bound for batch_growing_factor  {:?}",  batch_growing_factor);
+        if batch_growing_factor <= 1. {
+            println!("batch growing factor shoud be greater than 1. , possibly you can reduce number of iterations ");
+        }
+        debug!(" upper bound for batch_growing_factor  {:2.4E}",  batch_growing_factor);
         //
         return batch_growing_factor;
     } // end of estimate_batch_growing_factor
@@ -94,16 +113,23 @@ impl  StochasticControlledGradientDescent {
     // returns BatchSizeInfo for current iteration
     fn get_batch_size_at_jstep(&self, batch_growing_factor : f64, nbterms : usize, j: usize) -> BatchSizeInfo {
         let alfa_j = batch_growing_factor.powi(j as i32);
-        let max_large_batch_size = (nbterms as f64/10.).ceil() as usize;
+        // max size of large batch is 100 or 0.1 * the number of terms
+        let max_large_batch_size;
+        if nbterms > 100 {
+            max_large_batch_size = (nbterms as f64/10.).ceil() as usize;
+        }
+        else {
+            max_large_batch_size = nbterms;
+        }
+        // ensure max_mini_batch_size is at least 1.
         let max_mini_batch_size = (nbterms as f64/100.).ceil() as usize;
-
         // B_j
-        let large_batch_size = ((self.large_batch_size_init * alfa_j * alfa_j).ceil() as usize).min(max_large_batch_size);
+        let large_batch_size = ((self.large_batch_size_init * (nbterms as f64) * alfa_j * alfa_j).ceil() as usize).min(max_large_batch_size);
         // b_j  grow slowly as log(1. + )
-        let mini_batch_size = ((self.mini_batch_size_init * alfa_j).floor() as usize).min(max_mini_batch_size);
-        // m_j  computed to ensure mean number of mini batch ~ large_batch_size
-        let nb_mini_batch_parameter = self.m_zero * alfa_j.powf(1.5);
-        let step_size = 1. / alfa_j;
+        let mini_batch_size = ((self.mini_batch_size_init as f64 * alfa_j).floor() as usize).min(max_mini_batch_size);
+        // m_j  computed to ensure mean number of mini batch < large_batch_size as mini_batch_size_init < large_batch_size_init is enfored
+        let nb_mini_batch_parameter = self.m_zero * (nbterms as f64) * alfa_j.powf(1.5);
+        let step_size = self.eta_zero / alfa_j;
         //
         BatchSizeInfo {
             _step : j,
