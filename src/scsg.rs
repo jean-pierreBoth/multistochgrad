@@ -216,11 +216,12 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
         } else {
             info!("Starting with y = {:e}", value);
         }
-
+        trace!("nb_max_iterations {:?}", nb_max_iterations);
+        //
         let mut iteration : usize = 0;
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
-        trace!("nb_max_iterations {:?}", nb_max_iterations);
+        let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
         let batch_growing_factor = self.estimate_batch_growing_factor(nb_max_iterations, function.terms());
         // temporary gradients passed by ref to avoid possibly large reallocation
         let mut large_batch_gradient: Array<f64, D> = position.clone();
@@ -278,10 +279,15 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
             // update position
             position = position_during_mini_batches.clone();
             iteration += 1;
-
+            // some monitoring
             value = function.value(&position);
+            let gradnorm = norm_l2(&direction);
+            monitoring.push(IterRes {
+                value : value,
+                gradnorm : gradnorm,
+            });
             if log_enabled!(Debug) {
-                trace!(" direction {:2.6E} ", norm_l2(&direction));
+                trace!(" direction {:2.6E} ", gradnorm);
                 debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
             }
             // convergence control or max iterations control
@@ -301,4 +307,13 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
 fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
     let norm = gradient.fold(0., |norm, x |  norm+ (x * x));
     norm.sqrt()
+}
+
+
+/// 
+pub struct IterRes {
+    /// value of objective function
+    pub value : f64,
+    /// l2 norm of gradient
+    pub gradnorm : f64,
 }
