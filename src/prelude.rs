@@ -3,4 +3,5 @@
 
 pub use crate::types::*;
 pub use crate::scsg::*;
+pub use crate::svrg::*;
 pub use crate::mnist::*;

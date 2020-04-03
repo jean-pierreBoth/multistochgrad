@@ -21,7 +21,7 @@ use ndarray::prelude::*;
 
 use ndarray::{Array, Zip};
 
-use multistochgrad::scsg::*;
+use multistochgrad::svrg::*;
 use multistochgrad::types::*;
 
 #[test]
@@ -55,14 +55,13 @@ fn test_line_regression() {
         observations: noisy_observations
     };
     // eta_0, m_0  factor , b_0  , B_0 factor 
-    let scgd_pb = StochasticControlledGradientDescent::new(0.1, 
-                            0.1 ,   // base factor for number of mini batch
-                            5,       // base for size of mini batch
-                            0.95);
+    let svrg_pb = SVRGDescent::new(25,   // nb mini batch
+                                    0.1 ,   // step size
+                                    );
     //
     let initial_position = Array1::<f64>::from( vec![1.0; true_coefficients_arr.len()]);
     let nb_iter = 50;
-    let solution = scgd_pb.minimize(&sse, &initial_position, nb_iter);
+    let solution = svrg_pb.minimize(&sse, &initial_position, nb_iter);
 
     println!(" solution with a SSE = {:2.4E}", solution.value);
     for i in 0..solution.position.len() {

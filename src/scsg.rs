@@ -12,6 +12,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use ndarray::{Array, Dimension};
 
 use crate::types::*;
+use crate::monitor::*;
 
 
 
@@ -267,8 +268,6 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
                 //     else {
                 //         trace!("mini_batch_gradient_current L2 {:2.4E} ", norm_l2(&mini_batch_gradient_current));
                 //         assert!(norm_l2(&mini_batch_gradient_current) > 0.);
-                //         trace!(" delta pos {:2.4E} ", norm_l2(&(&position_before_mini_batch -&position_during_mini_batches)));
-                //         trace!(" delta grad {:2.4E} ", norm_l2(&(&mini_batch_gradient_current -&mini_batch_gradient_origin)));
                 //     }
                 // }
                 //
@@ -309,11 +308,3 @@ fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
     norm.sqrt()
 }
 
-
-/// 
-pub struct IterRes {
-    /// value of objective function
-    pub value : f64,
-    /// l2 norm of gradient
-    pub gradnorm : f64,
-}

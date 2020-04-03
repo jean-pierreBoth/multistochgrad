@@ -15,6 +15,7 @@ use rand_xoshiro::Xoshiro256PlusPlus;
 use ndarray::{Array, Dimension};
 
 use crate::types::*;
+use crate::monitor::*;
 
 
 
@@ -75,10 +76,11 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SVRGDescent {
         } else {
             info!("Starting with y = {:e}", value);
         }
+        trace!("nb_max_iterations {:?}", nb_max_iterations);
 
         let mut iteration : usize = 0;
         let nb_terms = function.terms();
-        trace!("nb_max_iterations {:?}", nb_max_iterations);
+        let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
         //
         let mut  term_gradient_current : Array<f64, D>;
         term_gradient_current = position.clone();
@@ -101,21 +103,19 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SVRGDescent {
                 // sample mini batch terms
                 // 
                 let xsi : f64 = rand_distr::Standard.sample(&mut rng);
-                let term = (nb_terms as f64 * xsi.ceil()) as usize;
+                let term = (nb_terms as f64 * xsi.floor()) as usize;
                 function.partial_gradient(&position_during_mini_batches, &[term], &mut term_gradient_current);
                 //
                 function.partial_gradient(&position_before_mini_batch, &[term], &mut term_gradient_origin);
                 //
                 // if log_enabled!(Trace)  {
                 //     if _k == 0 {
-                //         assert!(norm_l2(&mini_batch_gradient_origin) > 0.);
-                //         trace!("mini_batch_gradient_origin  L2 {:2.4E} ", norm_l2(&mini_batch_gradient_origin));
+                //         assert!(norm_l2(&term_gradient_origin) > 0.);
+                //         trace!("term_gradient_origin  L2 {:2.4E} ", norm_l2(&term_gradient_origin));
                 //     }
                 //     else {
-                //         trace!("mini_batch_gradient_current L2 {:2.4E} ", norm_l2(&mini_batch_gradient_current));
+                //         trace!("mini_batch_gradient_current L2 {:2.4E} ", norm_l2(&term_gradient_current));
                 //         assert!(norm_l2(&mini_batch_gradient_current) > 0.);
-                //         trace!(" delta pos {:2.4E} ", norm_l2(&(&position_before_mini_batch -&position_during_mini_batches)));
-                //         trace!(" delta grad {:2.4E} ", norm_l2(&(&mini_batch_gradient_current -&mini_batch_gradient_origin)));
                 //     }
                 // }
                 //
@@ -128,8 +128,14 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SVRGDescent {
             iteration += 1;
 
             value = function.value(&position);
+            let gradnorm = norm_l2(&direction);
+            monitoring.push(IterRes {
+                value : value,
+                gradnorm : gradnorm,
+            });
+            //
             if log_enabled!(Debug) {
-                trace!(" direction {:2.6E} ", norm_l2(&direction));
+                trace!(" direction {:2.6E} ", &gradnorm);
                 debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
             }
             // convergence control or max iterations control
