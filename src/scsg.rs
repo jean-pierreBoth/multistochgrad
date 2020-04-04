@@ -213,7 +213,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
         direction.fill(0.);
 
         if log_enabled!(Info) {
-            info!("Starting with y = {:e} for x = {:?}", value, position);
+            info!("Starting with y = {:e} \n for x = {:?}", value, position);
         } else {
             info!("Starting with y = {:e}", value);
         }

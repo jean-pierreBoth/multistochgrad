@@ -10,12 +10,14 @@
 //! In fact we minimize the mean of the summation which is the same but scales gradient.
 
 
+use rayon::prelude::*;
+
 use ndarray::{Array, Dimension};
 
 
 // Defines an objective function `f` that is subject to minimization.
 //
-pub trait Function<D:Dimension> {
+pub trait Function<D:Dimension> : Sync {
     /// Computes the objective function at a given `position` `x`, i.e., `f(x) = y`.
     fn value(&self, position: &ndarray::Array<f64,D>) -> f64;
 }
@@ -57,10 +59,12 @@ pub trait Summation<D:Dimension>: Function<D> {
 
     /// Computes the partial sum over a set of individual functions identified by `terms`.
     fn partial_value(&self, position:&Array<f64,D> , terms: &[usize]) -> f64 {
-        let mut value = 0.0;
-        for term in terms {
-            value += self.term_value(position, *term);
-        }
+      //  let mut value = 0.0;
+        let f = |t : usize| -> f64 { self.term_value(position, t)};
+        let value = terms.into_par_iter().map(|t| f(*t)).sum();
+        // for term in terms {
+        //     value += self.term_value(position, *term);
+        // }
         value
     }
 } // end trait Summation
@@ -90,10 +94,7 @@ pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
         // could Rayon // here if length of iterator i.e dimension dimension of data is very large.
         for term in terms.into_iter() {
             self.term_gradient(position, &term, &mut term_gradient);
-            // this loop can be //
-            for (g, gi) in gradient.iter_mut().zip(term_gradient.into_iter()) {
-                *g += gi;
-            }
+            *gradient += &term_gradient;
         }
      } // end partial_gradient
 
@@ -121,9 +122,7 @@ impl<D:Dimension, S: SummationC1<D> > FunctionC1<D> for S {
         // CAVEAT to //
         for term in 0..self.terms() {
             self.term_gradient(position, &term, &mut gradient_term);
-            for (g, gi) in gradient.iter_mut().zip(&gradient_term) {
-            *g += gi;
-            }
+            gradient += &gradient_term;
         }
         gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         //
