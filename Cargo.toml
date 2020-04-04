@@ -32,8 +32,13 @@ doc=true
 
 
 [[examples]]
-name = "mnist_logistic"
-path = "examples/mnist_logistic.rs"
+name = "mnist_logistic_scsg"
+path = "examples/mnist_logistic_scsg.rs"
+
+
+[[examples]]
+name = "mnist_logistic_svrg"
+path = "examples/mnist_logistic_svrg.rs"
 
 
 [dependencies]
