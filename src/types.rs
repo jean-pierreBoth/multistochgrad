@@ -1,13 +1,18 @@
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
 //
 //! This file is inspired by the crate optimisation written by b52@reaktor42.de
-// We kept the traits Function, FunctionC1, Summation and SummationC1
-// and changed slightly the function signatures.
-// 1. We use the crate ndarray with its dependancy rayon for //
-// 2. In batched stochastic gradient we need to define mean gradient on a subset
-//    of indexes. 
-// 3. We get rid of the iterator on indexes as indees are always usize.
-//! In fact we minimize the mean of the summation which is the same but scales gradient.
+//! We kept the traits Function, FunctionC1, Summation and SummationC1 which defines
+//! the interface accessible to users to define a minimisation problem.
+//! and changed slightly the function signatures.
+//! 1. We use the crate ndarray with its dependancy rayon for //
+//! 2. In batched stochastic gradient we need to define mean gradient on a subset
+//!    of indexes. 
+//! 3. We get rid of the iterator on indexes as indexs are always usize.
+//! 4. We use rayon to compute value of summation
+//! 
+//! In fact when minimising summation function we often seek to minimize the mean of the summation
+//! which is the same but scales gradient and this makes the implementation of batched stochastic gradient
+//! more natural as we always computes mean gradient over terms taken into account.
 
 
 use rayon::prelude::*;
@@ -15,8 +20,8 @@ use rayon::prelude::*;
 use ndarray::{Array, Dimension};
 
 
-// Defines an objective function `f` that is subject to minimization.
-//
+/// Defines an objective function `f` that is subject to minimization.
+/// trait must be sync to be able to be sent over threads
 pub trait Function<D:Dimension> : Sync {
     /// Computes the objective function at a given `position` `x`, i.e., `f(x) = y`.
     fn value(&self, position: &ndarray::Array<f64,D>) -> f64;
