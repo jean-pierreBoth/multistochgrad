@@ -97,9 +97,45 @@ pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
         gradient.fill(0.);
         let mut term_gradient : Array<f64, D> = gradient.clone();
         // could Rayon // here if length of iterator i.e dimension dimension of data is very large.
-        for term in terms.into_iter() {
-            self.term_gradient(position, &term, &mut term_gradient);
-            *gradient += &term_gradient;
+        if terms.len() < 1000 {
+            for term in terms.into_iter() {
+              self.term_gradient(position, &term, &mut term_gradient);
+              *gradient += &term_gradient;
+             }
+        }
+        else {
+            // we do not use directly rayon beccause we want to avoid too many allocations of term_gradient
+            // so we split iterations in blocks
+            let block_size = 1000;
+            // to get start of i block
+            let nb_block = if terms.len() % block_size == 0 { 
+                    terms.len() / block_size
+                 }
+                 else {
+                    1 + (terms.len() / block_size) 
+            };
+            let first = | i : usize | -> usize {
+                let start = i * block_size;
+                start
+            };
+            let last =  | i : usize | -> usize {
+                let end = ((i+1) * block_size).min(terms.len());
+                end
+            };
+            let compute = | i: usize | ->  Array<f64, D> {
+                let mut block_gradient : Array<f64, D> = gradient.clone();
+                block_gradient.fill(0.);
+                let mut term_gradient : Array<f64, D> = gradient.clone();
+                for k in first(i)..last(i) {
+                    self.term_gradient(position, &terms[k], &mut term_gradient);
+                    block_gradient += &term_gradient;
+                }
+                block_gradient
+            }; // end compute function
+            //
+            // now we execute in // compute on each block
+            //
+          *gradient = (0..nb_block).into_par_iter().map(|b| compute(b)).reduce(|| gradient.clone(), | acc , g|  acc + g  );
         }
      } // end partial_gradient
 
