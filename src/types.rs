@@ -164,10 +164,47 @@ impl<D:Dimension, S: SummationC1<D> > FunctionC1<D> for S {
         let mut gradient_term : Array<f64, D> = position.clone();
         gradient_term.fill(0.);
         // CAVEAT to //
-        for term in 0..self.terms() {
-            self.term_gradient(position, &term, &mut gradient_term);
-            gradient += &gradient_term;
+        if self.terms() < 2000 {
+            for term in 0..self.terms() {
+               self.term_gradient(position, &term, &mut gradient_term);
+               gradient += &gradient_term;
+             }
         }
+        else {
+            // we do not use directly rayon beccause we want to avoid too many allocations of term_gradient
+            // so we split iterations in blocks
+            let block_size = 1000;
+            // to get start of i block
+            let nb_block = if self.terms() % block_size == 0 { 
+                    self.terms() / block_size
+                 }
+                 else {
+                    1 + (self.terms() / block_size) 
+            };
+            let first = | i : usize | -> usize {
+                let start = i * block_size;
+                start
+            };
+            let last =  | i : usize | -> usize {
+                let end = ((i+1) * block_size).min(self.terms());
+                end
+            };
+            let compute = | i: usize | ->  Array<f64, D> {
+                let mut block_gradient : Array<f64, D> = gradient.clone();
+                block_gradient.fill(0.);
+                let mut term_gradient : Array<f64, D> = gradient.clone();
+                for k in first(i)..last(i) {
+                    self.term_gradient(position, &k, &mut term_gradient);
+                    block_gradient += &term_gradient;
+                }
+                block_gradient
+            }; // end compute function
+            //
+            // now we execute in // compute on each block
+            //
+            gradient = (0..nb_block).into_par_iter().map(|b| compute(b)).reduce(|| gradient.clone(), | acc , g|  acc + g  );
+        }
+        //
         gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
         //
         gradient
