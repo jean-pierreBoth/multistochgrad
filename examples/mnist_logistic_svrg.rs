@@ -2,8 +2,12 @@
 //! Download mnit data base from http://yann.lecun.com/exdb/mnist/
 //! Change file name data base to your settings.
 //! 
-//! to run with cargo run --example mnist_regression
-//! or with RUST_LOG=debug|info cargo run --example mnist_regression
+//! to run with [RUST_LOG=trace] cargo run --release --example mnist_logistic_svrg
+//! The behaviour is highly dependant on the initialization of initial_position.
+//! With a position set to [0.5 ..... 0.5] the behaviour is more stable than with scsg
+//! in the first iterations but the convergence is slower.
+//! With initial_positions set to [0. ....   0.] the convegence is monotonous
+//! but it is more than 2 times slower than scsg
 
 extern crate env_logger;
 extern crate rand;
@@ -23,7 +27,7 @@ use multistochgrad::prelude::*;
 //use multistochgrad::prelude::*;
 use multistochgrad::logistic_regression::*;
 
-
+// change path to your settings
 const IMAGE_FNAME_STR : &str = "/home.1/jpboth/Data/MNIST/train-images-idx3-ubyte";
 const LABEL_FNAME_STR : &str = "/home.1/jpboth/Data/MNIST/train-labels-idx1-ubyte";
 
@@ -80,7 +84,7 @@ fn main () {
             );
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
-    // do a bad initializion , fill with 0 is much better!!
+    // do a bad initialization , fill with 0 is much better!!
     initial_position.fill(0.0);
     let solution = svrg_pb.minimize(&regr_l, &initial_position , nb_iter);
     println!(" solution with minimized value = {:2.4E}", solution.value);
@@ -108,6 +112,5 @@ fn main () {
            };
         out.write_all(u8_slice).unwrap();
         out.flush().unwrap();
-     //   out.write(&solution.position.slice(s![k, ..])).unwrap();
     }
 }
