@@ -1,18 +1,21 @@
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
 //
 //! This file is inspired by the crate optimisation written by b52@reaktor42.de
-//! We kept the traits Function, FunctionC1, Summation and SummationC1 which defines
-//! the interface accessible to users to define a minimisation problem.
-//! and changed slightly the function signatures.
-//! 1. We use the crate ndarray with its dependancy rayon for //
-//! 2. In batched stochastic gradient we need to define mean gradient on a subset
-//!    of indexes. 
-//! 3. We get rid of the iterator on indexes as indexs are always usize.
-//! 4. We use rayon to compute value of summation
+//! We kept the traits Function, FunctionC1, Summation and SummationC1 which provides
+//! the interface accessible to users defining a minimisation problem.
+//! 
 //! 
 //! In fact when minimising summation function we often seek to minimize the mean of the summation
 //! which is the same but scales gradient and this makes the implementation of batched stochastic gradient
 //! more natural as we always computes mean gradient over terms taken into account.
+//! I made the following changes:
+//! 
+//! 1. In batched stochastic gradient we need to define mean gradient on a subset of indexes. 
+//! 2. We use the crate ndarray which provides addition of vector and enables rayon for //
+//! 3. We get rid of the iterator on indexes as indexes are always usize.
+//! 4. We use rayon to compute value of summation for values and gradients with parallel iterators
+//! 
+
 
 
 use rayon::prelude::*;
@@ -97,7 +100,7 @@ pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
         gradient.fill(0.);
         let mut term_gradient : Array<f64, D> = gradient.clone();
         // could Rayon // here if length of iterator i.e dimension dimension of data is very large.
-        if terms.len() < 1000 {
+        if terms.len() < 2000 {
             for term in terms.into_iter() {
               self.term_gradient(position, &term, &mut term_gradient);
               *gradient += &term_gradient;
