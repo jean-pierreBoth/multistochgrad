@@ -2,6 +2,11 @@
 
 This crate provides a Rust implementation of some stochastic gradient algorithms.
 
+The algorithms implemented here are dedicated to the minimization of objective function represented by the
+mean of many functions as occurring in learning contexts.
+
+The implemented algorithms are:
+
 * The so-called SCSG algorithm described and analyzed in the two papers by by L. Lei and  M.I Jordan.
 
     1. "On the adaptativity of stochastic gradient based optimization" (2019)
@@ -13,6 +18,12 @@ This crate provides a Rust implementation of some stochastic gradient algorithms
 * The SVRG algorithm described in the paper by R. Johnson and T. Zhang
 "Accelerating Stochastic Gradient Descent using Predictive Variance Reduction" (2019). 
 [Advances in Neural Information Processing Systems, pages 315–323, 2013](https://papers.nips.cc/paper/4937-accelerating-stochastic-gradient-descent-using-predictive-variance-reduction.pdf)
+
+
+## Acknowledgement
+
+This crate is indebted to the crate optimisation from which I kept the traits defining the user interface
+after various modifications which are detailed in the file ``types.rs``
 
 ## License
 

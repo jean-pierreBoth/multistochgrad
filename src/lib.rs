@@ -14,6 +14,7 @@ pub mod prelude;
 pub mod types;
 pub mod scsg;
 pub mod svrg;
+pub mod sag;
 pub mod mnist;
 mod monitor;
 pub mod logistic_regression;
