@@ -78,9 +78,12 @@ pub trait Summation<D:Dimension>: Function<D> {
 } // end trait Summation
 
 
+/// always return the mean of the sum
 impl<D : Dimension, S: Summation<D> > Function<D> for S {
     fn value(&self, position: &Array<f64,D>) -> f64 {
-        self.partial_value(position, &(0..self.terms()).into_iter().collect::<Vec<usize>>())
+        let value = self.partial_value(position, &(0..self.terms()).into_iter().collect::<Vec<usize>>());
+        // 
+        value/(self.terms() as f64)
     }
 }
 
@@ -265,4 +268,13 @@ impl <D:Dimension> Evaluation<D> for Solution<D> {
     fn value(&self) -> f64 {
         self.value
     }
+}
+
+
+
+
+#[allow(dead_code)]
+pub fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
+    let norm = gradient.fold(0., |norm, x |  norm+ (x * x));
+    norm.sqrt()
 }

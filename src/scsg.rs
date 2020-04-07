@@ -300,11 +300,3 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGr
 }  // end impl impl<F: Summation1> Minimizer<F>
 
 
-
-
-#[allow(dead_code)]
-fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
-    let norm = gradient.fold(0., |norm, x |  norm+ (x * x));
-    norm.sqrt()
-}
-

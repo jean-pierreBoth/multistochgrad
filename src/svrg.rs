@@ -80,7 +80,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SVRGDescent {
 
         let mut iteration : usize = 0;
         let nb_terms = function.terms();
-        let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
+        let mut monitoring = Vec::<IterRes>::with_capacity(nb_max_iterations);
         //
         let mut  term_gradient_current : Array<f64, D>;
         term_gradient_current = position.clone();
@@ -150,9 +150,3 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SVRGDescent {
 
 
 
-
-#[allow(dead_code)]
-fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
-    let norm = gradient.fold(0., |norm, x |  norm+ (x * x));
-    norm.sqrt()
-}
