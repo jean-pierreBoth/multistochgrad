@@ -66,6 +66,7 @@ pub trait Summation<D:Dimension>: Function<D> {
     fn term_value(&self, position: &Array<f64,D>, term: usize) -> f64;
 
     /// Computes the partial sum over a set of individual functions identified by `terms`.
+    /// without dividing by anything!!
     fn partial_value(&self, position:&Array<f64,D> , terms: &[usize]) -> f64 {
       //  let mut value = 0.0;
         let f = |t : usize| -> f64 { self.term_value(position, t)};

@@ -20,7 +20,7 @@ use rand::random;
 use ndarray::prelude::*;
 
 
-use multistochgrad::svrg::*;
+use multistochgrad::sag::*;
 use multistochgrad::types::*;
 
 use multistochgrad::applis::linear_regression::*;
@@ -56,13 +56,12 @@ fn test_line_regression() {
         observations: noisy_observations
     };
     // eta_0, m_0  factor , b_0  , B_0 factor 
-    let svrg_pb = SVRGDescent::new(25,   // nb mini batch
-                                    0.1 ,   // step size
+    let sag_pb = SagDescent::new(0.5 ,   // step size
                                     );
     //
     let initial_position = Array1::<f64>::from( vec![1.0; true_coefficients_arr.len()]);
     let nb_iter = 50;
-    let solution = svrg_pb.minimize(&sse, &initial_position, nb_iter);
+    let solution = sag_pb.minimize(&sse, &initial_position, nb_iter);
 
     println!(" solution with a SSE = {:2.4E}", solution.value);
     for i in 0..solution.position.len() {

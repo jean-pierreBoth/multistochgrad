@@ -17,8 +17,7 @@ pub mod svrg;
 pub mod sag;
 pub mod mnist;
 mod monitor;
-pub mod logistic_regression;
-
+pub mod applis;
 
 lazy_static! {
     #[allow(dead_code)]

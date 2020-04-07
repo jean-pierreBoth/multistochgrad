@@ -7,7 +7,7 @@ mean of many functions as occurring in learning contexts.
 
 The implemented algorithms are:
 
-* The so-called SCSG algorithm described and analyzed in the two papers by by L. Lei and  M.I Jordan.
+* The so-called SCSG algorithm described and analyzed in the two papers by L. Lei and  M.I Jordan.
 
     1. "On the adaptativity of stochastic gradient based optimization" (2019)
     [SCSG-1](https://arxiv.org/abs/1904.04480)
@@ -19,11 +19,21 @@ The implemented algorithms are:
 "Accelerating Stochastic Gradient Descent using Predictive Variance Reduction" (2019). 
 [Advances in Neural Information Processing Systems, pages 315–323, 2013](https://papers.nips.cc/paper/4937-accelerating-stochastic-gradient-descent-using-predictive-variance-reduction.pdf)
 
+* The Stochstic Averaged Gradient Descent as described in the paper:
+"Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)
+M.Schmidt, N.LeRoux, F.Bach
+
+Further comments on the implementation are in the doc of files scsg.rs, svrg.rs, sag.rs.
+
+## Examples and tests
+
+Examples are based on logisitc regression applied to the digits MNIST database
+as in the second paper on SCSG papers. The logistic regression is tested with thre 3 algorithms.
 
 ## Acknowledgement
 
-This crate is indebted to the crate optimisation from which I kept the traits defining the user interface
-after various modifications which are detailed in the file ``types.rs``
+This crate is indebted to the crate optimisation from which I kept the traits `Function`, `Summation`
+defining the user interface after various modifications which are detailed in the file ``types.rs``
 
 ## License
 

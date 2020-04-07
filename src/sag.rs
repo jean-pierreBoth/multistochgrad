@@ -62,16 +62,16 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
     fn minimize(&self, function: &F, initial_position: &Array<f64,D>, nb_max_iterations : usize) -> Solution<D> {
         let mut position = initial_position.clone();
         let mut value = function.value(&position);
-
+        // some logs
         if log_enabled!(Info) {
             info!("Starting with y = {:2.4e}", value);
         } else {
             info!("Starting with y = {:e}", value);
         }
         trace!("nb_max_iterations {:?}", nb_max_iterations);
-        // direction propagation
-        let mut direction : Array<f64, D> = position.clone();
-        direction.fill(0.);
+        // some temporaries
+        let mut old_position = initial_position.clone();
+        old_position.fill(0.);
         let mut term_gradient_old : Array<f64, D>;
         term_gradient_old = position.clone();
         term_gradient_old.fill(0.);
@@ -84,23 +84,33 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
         let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
         
         let mut iteration = 0;
+        let mut term_old = 0;
+        //
+        let mut direction = function.gradient(&position);
         //
         loop {
             // sample unbiaised ...) i in 0..nbterms
             let xsi : f64 = rand_distr::Standard.sample(&mut rng);
             let term = (nb_terms as f64 * xsi.floor()) as usize;
-            function.partial_gradient(&position, &[term], &mut term_gradient_current);
-            direction = direction - &term_gradient_old + &term_gradient_current;
-            position = position - self.get_step_size_at_jstep(iteration) * &direction;
+            if iteration >= 1 {
+                function.partial_gradient(&old_position, &[term_old], &mut term_gradient_old);
+            }
+            //  trace!(" term_gradient_current {:2.4E} ", &crate::types::norm_l2(&term_gradient_current));
+            // gradient terms do not have the nb_terms renormalization
+            direction = direction - (&term_gradient_old - &term_gradient_current) / (nb_terms as f64);
+            old_position = position.clone();
+            position = position - (self.get_step_size_at_jstep(iteration)/(nb_terms as f64)) * &direction;
+            term_old = term;
             iteration += 1;
-
+            // monitoring
             value = function.value(&position);
             let gradnorm = crate::types::norm_l2(&direction);
             monitoring.push(IterRes {
                 value : value,
                 gradnorm : gradnorm,
             });
-            if log_enabled!(Debug) {
+            if log_enabled!(Debug) && iteration % 1 == 0 {
+                trace!(" position {:2.6E} ", &position);
                 trace!(" direction {:2.6E} ", &gradnorm);
                 debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
             }
