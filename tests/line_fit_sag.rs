@@ -1,11 +1,12 @@
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
 //
-// This file is taken from the crate optimisation, with minor modifications,
+// This test  is taken from the crate optimisation by Oliver Mader , with adaptation
+//  to our minimizer.
 
 //! Illustration of fitting a linear regression model using stochastic gradient descent
 //! given a few noisy sample observations.
 //!
-//! Run with `RUST_LOG=trace    cargo test --test line_fitting`.
+//! Run with `RUST_LOG=trace    cargo test --test line_fit_sag`.
 
 
 extern crate env_logger;
@@ -56,12 +57,14 @@ fn test_line_regression() {
         observations: noisy_observations
     };
     // eta_0, m_0  factor , b_0  , B_0 factor 
-    let sag_pb = SagDescent::new(0.5 ,   // step size
+    let sag_pb = SagDescent::new(   10,  // batch size
+                                    0.5 ,   // step size
                                     );
     //
     let initial_position = Array1::<f64>::from( vec![1.0; true_coefficients_arr.len()]);
-    let nb_iter = 10000;
-    let solution = sag_pb.minimize(&sse, &initial_position, nb_iter);
+    // nb_iter shouls be number of iter we want on the whole set of data multiplied by number of terms!
+    let nb_iter = 100;
+    let solution = sag_pb.minimize(&sse, &initial_position, nb_iter * sse.terms());
 
     println!(" solution with a SSE = {:2.4E}", solution.value);
     for i in 0..solution.position.len() {
