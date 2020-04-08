@@ -25,7 +25,7 @@ use ndarray::prelude::*;
 use multistochgrad::prelude::*;
 
 //use multistochgrad::prelude::*;
-use multistochgrad::logistic_regression::*;
+use multistochgrad::applis::logistic_regression::*;
 
 // change path to your settings
 const IMAGE_FNAME_STR : &str = "/home.1/jpboth/Data/MNIST/train-images-idx3-ubyte";

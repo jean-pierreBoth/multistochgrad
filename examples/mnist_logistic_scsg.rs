@@ -21,7 +21,7 @@ use ndarray::prelude::*;
 use multistochgrad::prelude::*;
 
 //use multistochgrad::prelude::*;
-use multistochgrad::logistic_regression::*;
+use multistochgrad::applis::logistic_regression::*;
 
 
 const IMAGE_FNAME_STR : &str = "/home.1/jpboth/Data/MNIST/train-images-idx3-ubyte";
@@ -74,7 +74,7 @@ fn main () {
     // minimize
     //
     // eta_0, m_0, b_0 , B_0
-    let nb_iter = 50;
+    let nb_iter = 100;
     let scgd_pb = StochasticControlledGradientDescent::new(0.5, 
                 0.0015,      // base factor for number of mini batch
                  1,          // base for size of mini batch
@@ -82,7 +82,7 @@ fn main () {
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     // do a bad initializion , fill with 0 is much better!!
-    initial_position.fill(0.0);
+    initial_position.fill(0.5);
     let solution = scgd_pb.minimize(&regr_l, &initial_position , nb_iter);
     println!(" solution with minimized value = {:2.4E}", solution.value);
     //
