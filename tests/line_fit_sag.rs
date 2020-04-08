@@ -60,7 +60,7 @@ fn test_line_regression() {
                                     );
     //
     let initial_position = Array1::<f64>::from( vec![1.0; true_coefficients_arr.len()]);
-    let nb_iter = 50;
+    let nb_iter = 10000;
     let solution = sag_pb.minimize(&sse, &initial_position, nb_iter);
 
     println!(" solution with a SSE = {:2.4E}", solution.value);

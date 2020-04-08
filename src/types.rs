@@ -94,11 +94,13 @@ impl<D : Dimension, S: Summation<D> > Function<D> for S {
 pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
     /// The required method the user must furnish.
     /// Computes the gradient of one individual function identified by `term` at the given
-    /// `position`. gradient index and position indexes must corrspond.
+    /// `position` `without a 1/n renormalization`
+    /// gradient index and position indexes must corrspond.
     fn term_gradient(&self, position: &Array<f64, D>, term: &usize, gradient : &mut Array<f64, D>);
 
     // gradient is passed as arg to avoid reaalocation!
-    /// Computes the partial gradient over a set of `terms` at the given `position`.
+    /// Computes the sum of partial gradient over a set of `terms` at the given `position`.
+    /// `Wwithout a 1/n renormalization`
     fn partial_gradient(&self, position: &Array<f64, D>, terms: &[usize], gradient : &mut Array<f64, D>) {
         assert!(terms.len() > 0);
         gradient.fill(0.);

@@ -70,11 +70,6 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
         }
         trace!("nb_max_iterations {:?}", nb_max_iterations);
         // some temporaries
-        let mut old_position = initial_position.clone();
-        old_position.fill(0.);
-        let mut term_gradient_old : Array<f64, D>;
-        term_gradient_old = position.clone();
-        term_gradient_old.fill(0.);
         let mut term_gradient_current : Array<f64, D>;
         term_gradient_current = position.clone();
         term_gradient_current.fill(0.);        
@@ -82,25 +77,39 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
         let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
-        
-        let mut iteration = 0;
-        let mut term_old = 0;
         //
-        let mut direction = function.gradient(&position);
+        let mut iteration = 0;
+        //
+        let mut direction = initial_position.clone();
+        direction.fill(0.);        
+
+        let mut terms_seen = Vec::<u8>::with_capacity(function.terms());
+        let mut nb_terms_seen = 0;
+        let mut gradient_list = Vec::<Box<Array<f64,D>>>::with_capacity(function.terms());
+        for _term in 0..nb_terms {
+//            function.partial_gradient(&position, &[_term], &mut term_gradient_current);
+            gradient_list.push(Box::new(term_gradient_current.clone()));
+            terms_seen.push(0);
+        }
+
         //
         loop {
             // sample unbiaised ...) i in 0..nbterms
             let xsi : f64 = rand_distr::Standard.sample(&mut rng);
-            let term = (nb_terms as f64 * xsi.floor()) as usize;
-            if iteration >= 1 {
-                function.partial_gradient(&old_position, &[term_old], &mut term_gradient_old);
+            let term = (nb_terms as f64 * xsi).floor() as usize;
+            if terms_seen[term] == 0 {
+                terms_seen[term] = 1;
+                nb_terms_seen += 1;
             }
             //  trace!(" term_gradient_current {:2.4E} ", &crate::types::norm_l2(&term_gradient_current));
             // gradient terms do not have the nb_terms renormalization
-            direction = direction - (&term_gradient_old - &term_gradient_current) / (nb_terms as f64);
-            old_position = position.clone();
-            position = position - (self.get_step_size_at_jstep(iteration)/(nb_terms as f64)) * &direction;
-            term_old = term;
+            function.partial_gradient(&position, &[term], &mut term_gradient_current);
+    //        trace!(" term {:?} gradient {:2.6E}  nb_term {:?} ", term, &term_gradient_current, nb_terms_seen);
+    //        trace!(" term {:?} gradient substracted  {:2.6E} ", term, gradient_list[term].as_ref());
+            direction = direction - (gradient_list[term].as_ref() - &term_gradient_current) / (nb_terms as f64);
+            gradient_list[term] = Box::new(term_gradient_current.clone());
+       
+            position = position - self.get_step_size_at_jstep(iteration) * &direction;
             iteration += 1;
             // monitoring
             value = function.value(&position);
@@ -109,9 +118,9 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
                 value : value,
                 gradnorm : gradnorm,
             });
-            if log_enabled!(Debug) && iteration % 1 == 0 {
+            if log_enabled!(Debug) && iteration % 100 == 0 {
                 trace!(" position {:2.6E} ", &position);
-                trace!(" direction {:2.6E} ", &gradnorm);
+                trace!(" direction {:2.6E} ", &direction);
                 debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
             }
             // convergence control or max iterations control
