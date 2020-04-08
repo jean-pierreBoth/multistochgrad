@@ -24,6 +24,8 @@ use crate::monitor::*;
 pub struct SagDescent {
     //
     rng: Xoshiro256PlusPlus,
+    /// batch size for artial update of gradient
+    batch_size : usize,
     /// step size
     step_size : f64,
     ///
@@ -33,12 +35,13 @@ pub struct SagDescent {
 
 
 impl SagDescent {
-    pub fn new(step_size : f64) -> SagDescent {
+    pub fn new(batch_size: usize, step_size : f64) -> SagDescent {
         //
-        trace!(" step_size {:2.4E} ", step_size);
+        trace!(" batch size {:?} step_size {:2.4E} ", batch_size, step_size);
         //
         SagDescent {
             rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
+            batch_size : batch_size,
             step_size : step_size,
             _momentum : None,
         }
@@ -82,32 +85,49 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
         //
         let mut direction = initial_position.clone();
         direction.fill(0.);        
-
-        let mut terms_seen = Vec::<u8>::with_capacity(function.terms());
-        let mut nb_terms_seen = 0;
-        let mut gradient_list = Vec::<Box<Array<f64,D>>>::with_capacity(function.terms());
-        for _term in 0..nb_terms {
-            gradient_list.push(Box::new(term_gradient_current.clone()));
-            terms_seen.push(0);
+        // blocks 
+        let mut nb_block_seen = 0;
+        let block_size = self.batch_size;
+        let nb_blocks = if nb_terms % block_size == 0 {
+                nb_terms / block_size
         }
-
+        else {
+            nb_terms / block_size + 1
+        };
+        let mut block_seen = Vec::<u8>::with_capacity(nb_blocks);
+        let mut gradient_list = Vec::<Box<Array<f64,D>>>::with_capacity(nb_blocks);
+        for _block in 0..nb_blocks {
+            gradient_list.push(Box::new(term_gradient_current.clone()));
+            block_seen.push(0);
+        }
+        let block_start = | i : usize | -> usize {
+            let start = i * block_size;
+            start
+        };
+        let block_end =  | i : usize | -> usize {
+            let end = ((i+1) * block_size).min(nb_terms);
+            end
+        };
         //
         loop {
             // sample unbiaised ...) i in 0..nbterms
             let xsi : f64 = rand_distr::Standard.sample(&mut rng);
-            let term = (nb_terms as f64 * xsi).floor() as usize;
-            if terms_seen[term] == 0 {
-                terms_seen[term] = 1;
-                nb_terms_seen += 1;
+            let block = (nb_blocks as f64 * xsi).floor() as usize;
+            if block_seen[block] == 0 {
+                block_seen[block] = 1;
+                nb_block_seen += 1;
+                if nb_block_seen >= nb_blocks {
+                    info!(" all blocks were visited at iter {:?} ", iteration);
+                }
             }
-            //  trace!(" term_gradient_current {:2.4E} ", &crate::types::norm_l2(&term_gradient_current));
-            // gradient terms do not have the nb_terms renormalization
-            function.partial_gradient(&position, &[term], &mut term_gradient_current);
+            // trace!(" term_gradient_current {:2.4E} ", &crate::types::norm_l2(&term_gradient_current));
+            let block_content = &(block_start(block) .. block_end(block)).into_iter().collect::<Vec<usize>>();
+            function.partial_gradient(&position, block_content, &mut term_gradient_current);
     //        trace!(" term {:?} gradient {:2.6E}  nb_term {:?} ", term, &term_gradient_current, nb_terms_seen);
     //        trace!(" term {:?} gradient substracted  {:2.6E} ", term, gradient_list[term].as_ref());
-            direction = direction - (gradient_list[term].as_ref() - &term_gradient_current) / (nb_terms as f64);
-            gradient_list[term] = Box::new(term_gradient_current.clone());
-       
+            direction = direction - (gradient_list[block].as_ref() - &term_gradient_current) / (nb_terms as f64);
+            gradient_list[block] = Box::new(term_gradient_current.clone());
+            // update position
             position = position - self.get_step_size_at_jstep(iteration) * &direction;
             iteration += 1;
             // monitoring
@@ -117,7 +137,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
                 value : value,
                 gradnorm : gradnorm,
             });
-            if log_enabled!(Debug) && iteration % nb_terms == 0 ||  iteration % 1000 == 0 {
+            if log_enabled!(Debug) && (iteration % nb_terms == 0) ||  iteration % 10 == 0 {
 //                trace!(" position {:2.6E} ", &position);
 //                trace!(" direction {:2.6E} ", &direction);
                 debug!("\n\n Iteration {:?} y = {:2.4E}, norm grad {:?}", iteration, value, gradnorm);

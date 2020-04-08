@@ -41,6 +41,10 @@ name = "mnist_logistic_svrg"
 path = "examples/mnist_logistic_svrg.rs"
 
 
+[[examples]]
+name = "mnist_logistic_sag"
+path = "examples/mnist_logistic_sag.rs"
+
 [dependencies]
 # default is version spec is ^ meaning can update up to max non null version number
 # cargo doc --no-deps avoid dependencies doc generation
