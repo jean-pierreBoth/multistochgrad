@@ -87,7 +87,6 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
         let mut nb_terms_seen = 0;
         let mut gradient_list = Vec::<Box<Array<f64,D>>>::with_capacity(function.terms());
         for _term in 0..nb_terms {
-//            function.partial_gradient(&position, &[_term], &mut term_gradient_current);
             gradient_list.push(Box::new(term_gradient_current.clone()));
             terms_seen.push(0);
         }
@@ -118,12 +117,16 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
                 value : value,
                 gradnorm : gradnorm,
             });
-            if log_enabled!(Debug) && iteration % 100 == 0 {
-                trace!(" position {:2.6E} ", &position);
-                trace!(" direction {:2.6E} ", &direction);
-                debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
+            if log_enabled!(Debug) && iteration % nb_terms == 0 ||  iteration % 1000 == 0 {
+//                trace!(" position {:2.6E} ", &position);
+//                trace!(" direction {:2.6E} ", &direction);
+                debug!("\n\n Iteration {:?} y = {:2.4E}, norm grad {:?}", iteration, value, gradnorm);
             }
             // convergence control or max iterations control
+            if iteration % nb_terms == 0 && gradnorm < 1.0e-5 {
+                info!("Null gradient , stopping optimization {:2.4E}", gradnorm);
+                return Solution::new(position, value);
+            }
             if iteration >= nb_max_iterations {
                 info!("Reached maximal number of iterations required , stopping optimization");
                 return Solution::new(position, value);
