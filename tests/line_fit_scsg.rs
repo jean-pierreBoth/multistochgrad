@@ -54,7 +54,7 @@ fn test_line_regression() {
     let sse = SSE {
         observations: noisy_observations
     };
-    // eta_0, m_0  factor , b_0   
+    // eta_0, m_0  factor , b_0 , B_0  
     let scgd_pb = StochasticControlledGradientDescent::new(0.1, 
                             0.1 ,   // base factor for number of mini batch
                             5,       // base for size of mini batch

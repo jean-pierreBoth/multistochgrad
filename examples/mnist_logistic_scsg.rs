@@ -1,9 +1,13 @@
 //! This file provides an example of logisic regression on MNIST digits database
 //! Download mnit data base from http://yann.lecun.com/exdb/mnist/
 //! Change file name data base to your settings.
-//! 
-//! to run with cargo run --example mnist_regression
-//! or with RUST_LOG=debug|info cargo run --example mnist_regression
+///
+/// to run with cargo run --release --example mnist_regression
+/// or with RUST_LOG=debug|info cargo run --example mnist_logistic_scsg
+/// |  initialization |  nb iter | B_0   |   b_0    | y value | time |
+/// |  ---            |   ----   |  ---   |   ----  |  ----   | ---  |
+/// |  0.5 ... 0.5    | 100      |@.015  |   0.0015  | 0.49   |  26s |
+/// 
 
 extern crate env_logger;
 extern crate rand;

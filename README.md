@@ -19,29 +19,40 @@ The implemented algorithms are:
 "Accelerating Stochastic Gradient Descent using Predictive Variance Reduction" (2019).  
 [Advances in Neural Information Processing Systems, pages 315–323, 2013](https://papers.nips.cc/paper/4937-accelerating-stochastic-gradient-descent-using-predictive-variance-reduction.pdf)
 
-* The SAG algorithm described in : 
- 
+* The SAG algorithm described in :
+
 The Stochstic Averaged Gradient Descent as described in the paper:
 "Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)
 M.Schmidt, N.LeRoux, F.Bach
 
-All algorithms alternates some form of large batch computation(computing gradient of many terms of the sum)
+All algorithms alternates some form of large batch computation (computing gradient of many terms of the sum)
 and small or mini batches (computing a small number of terms, possibly just one, term of the gradient)
 and updating position by combining these global and local gradients.
 
 Further details on the algorithms are in the doc of files scsg.rs, svrg.rs, sag.rs
 and in the reference papers.
 
-The implementation is based on the ndarray and rayon crates that provide respectiveley efficient
+The implementation is based on the `ndarray` and `rayon` crates that provide respectiveley efficient
 array manipulation and transparent threaded computations.
 
 ## Examples and tests
 
 Examples are based on logisitc regression applied to digits MNIST database
-(as in the second paper on SCSG). The database has 60000 images of handwritten digits of 784 pixels.  
+(as in the second paper on SCSG). The database has 60000 images of 784 pixels corresponding to
+handwritten digits form 0 to 9.  
 The logistic regression is tested with the 3 algorithms and some comments are provided, comparing the results.
 
 Small tests consist in a line fitting problem that is taken  from the crate optimisation.
+
+### SCSG logisitc regression
+
+|  initialization |  nb iter | B_0   |   b_0     | y value | time |
+|  ---            |   ----   |  ---  |   ----    |  ----   | ---  |
+|  0.5 ... 0.5    | 100      |0.015  |   0.0015  | 0.49    |  26s  |
+
+### SVRG logistic regression
+
+### SAG logisitc regression
 
 ## Acknowledgement
 
