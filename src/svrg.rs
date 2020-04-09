@@ -19,21 +19,40 @@ use crate::monitor::*;
 
 
 
-// m_zero should be around 2 * mini_batch_size_init 
-// we try mini batch size m_zero * alfa^j 
-//        large batch size large_batch_size_init * alfa^(2*j)
-//        
-/// Provides _stochastic_ Gradient Descent optimization
-/// as described in Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
+///
+/// Provides stochastic Gradient Descent optimization described in :  
+/// ``"Accelerating Stochastic Gradient Descent using Predictive Variance Reduction"``.   
+/// *Advances in Neural Information Processing Systems, pages 315–323, 2013*
+/// 
+/// The algorithm consists in alternating a full gradient computation of the sum
+/// and a sequence of mini batches of one term selected at random and 
+/// computing just the gradient of this term.
+/// 
+/// During the mini batch sequence the gradient of the sum is approximated by
+/// updating only the randomly selected term component of the full gradient.
+/// 
+/// Precisely we have the following sequence:  
+/// - a batch_gradient as the full gradient at current position  
+/// - storing gradient and position before the mini batch sequence  
+/// - then for `nb_mini_batch` :  
+///     - uniform sampling of a term of the summation  
+///     - computation of the gradient of the term at current position and the gradient
+///                     at position before mini batch
+///     - computation of direction of propagation as the batch gradient + gradient of term at current 
+///                     position - gradient of term at position before mini batch sequence
+///     - update of position
+/// 
 pub struct SVRGDescent {
     rng: Xoshiro256PlusPlus,
-    // parameter governing evolution of inner_loop_size
+    /// parameter governing evolution of inner_loop_size
     nb_mini_batch: usize,
-    // m_0 in the paper
+    /// step_size
     step_size : f64,
 }
 
 impl SVRGDescent  {
+    /// nb_mini_batch : number of mini batch   
+    /// step_size used in position update
     pub fn new(nb_mini_batch : usize , step_size : f64) -> SVRGDescent {
         //
         trace!(" nb_mini_batch {:?} step_size {:2.4E} ", nb_mini_batch, step_size);
@@ -53,7 +72,7 @@ impl SVRGDescent  {
     fn get_step_size_at_jstep(&self, _j:usize) -> f64 {
         self.step_size
     }
-    ///
+    /// returns the number of steps of one term
     fn get_nb_small_mini_batches(&self, _j:usize) -> usize {
         self.nb_mini_batch
     }
