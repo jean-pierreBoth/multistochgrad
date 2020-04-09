@@ -83,7 +83,7 @@ fn main () {
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     // do a bad initializion , fill with 0 is much better!!
     initial_position.fill(0.5);
-    let solution = scgd_pb.minimize(&regr_l, &initial_position , nb_iter);
+    let solution = scgd_pb.minimize(&regr_l, &initial_position , Some(nb_iter));
     println!(" solution with minimized value = {:2.4E}", solution.value);
     //
     // get image of coefficients to see corresponding images.

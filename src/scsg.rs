@@ -202,12 +202,13 @@ fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterato
 
 
 
-impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  StochasticControlledGradientDescent {
+impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticControlledGradientDescent {
     type Solution = Solution<D>;
 
-    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, nb_max_iterations : usize) -> Solution<D> {
+    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, max_iterations : Option<usize>) -> Solution<D> {
         let mut position = initial_position.clone();
         let mut value = function.value(&position);
+        let nb_max_iterations = max_iterations.unwrap();
         // direction propagation
         let mut direction : Array<f64, D> = position.clone();
         direction.fill(0.);

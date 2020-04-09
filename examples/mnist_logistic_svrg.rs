@@ -77,7 +77,7 @@ fn main () {
     //
     // minimize
     //
-    // eta_0, m_0, b_0 , B_0
+    // 
     let nb_iter = 50;
     let svrg_pb = SVRGDescent::new(500,       // mini batch size
                 0.0015,                       // batch step
@@ -86,7 +86,7 @@ fn main () {
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     // do a bad initialization , fill with 0 is much better!!
     initial_position.fill(0.0);
-    let solution = svrg_pb.minimize(&regr_l, &initial_position , nb_iter);
+    let solution = svrg_pb.minimize(&regr_l, &initial_position , Some(nb_iter));
     println!(" solution with minimized value = {:2.4E}", solution.value);
     //
     // get image of coefficients to see corresponding images.

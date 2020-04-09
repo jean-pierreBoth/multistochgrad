@@ -1,6 +1,6 @@
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
 //
-//! This file is inspired by the crate optimisation written by b52@reaktor42.de
+//! This file is inspired by the crate optimisation written by  Oliver Mader b52@reaktor42.de
 //! We kept the traits Function, FunctionC1, Summation and SummationC1 which provides
 //! the interface accessible to users defining a minimisation problem.
 //! 
@@ -13,7 +13,8 @@
 //! 1. In batched stochastic gradient we need to define mean gradient on a subset of indexes. 
 //! 2. We use the crate ndarray which provides addition of vector and enables rayon for //
 //! 3. We get rid of the iterator on indexes as indexes are always usize.
-//! 4. We use rayon to compute value of summation for values and gradients with parallel iterators
+//! 4. The function minimize in Trait Minimizer takes a generic Argument for future extension
+//! 5. We use rayon to compute value of summation for values and gradients with parallel iterators
 //! 
 
 
@@ -30,21 +31,6 @@ pub trait Function<D:Dimension> : Sync {
     fn value(&self, position: &ndarray::Array<f64,D>) -> f64;
 }
 
-
-/// New-type to support optimization of real functions without requiring
-/// to implement a trait.
-// pub struct Func<D,F> 
-//        where  F : Fn(&Array<f64,D>) -> f64,
-//        D : Dimension
-// {
-//     pub f : F,
-// }
-
-// impl<D : Dimension, F: Fn(&Array<f64,D>) -> f64> Function<D> for Func<D, F> {
-//     fn value(&self, position: &Array<f64,D>) -> f64 {
-//         (self.f)(position)
-//     }
-// }
 
 
 /// Defines an objective function `f` that is able to compute the first derivative
@@ -221,13 +207,13 @@ impl<D:Dimension, S: SummationC1<D> > FunctionC1<D> for S {
 
 
 /// Defines an optimizer that is able to minimize a given objective function `F`.
-pub trait Minimizer<D: Dimension, F: ?Sized> {
+pub trait Minimizer<D: Dimension, F: ?Sized, MinimizerArg> {
     /// Type of the solution the `Minimizer` returns.
     type Solution: Evaluation<D>;
 
-    /// Performs the actual minimization and returns a solution that
-    /// might be better than the initially provided one.
-    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, nbiter:usize) -> Self::Solution;
+    /// Performs the actual minimization and returns a solution.
+    /// MinimizerArg should provide a number of iterations, a min error , or anything needed for implemented algorithm
+    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, args : Option<MinimizerArg>) -> Self::Solution;
 }
 
 

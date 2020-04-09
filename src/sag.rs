@@ -59,12 +59,13 @@ impl SagDescent {
 
 
 
-impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F> for  SagDescent {
+impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
     type Solution = Solution<D>;
 
-    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, nb_max_iterations : usize) -> Solution<D> {
+    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, max_iterations : Option<usize>) -> Solution<D> {
         let mut position = initial_position.clone();
         let mut value = function.value(&position);
+        let nb_max_iterations = max_iterations.unwrap();
         // some logs
         if log_enabled!(Info) {
             info!("Starting with y = {:2.4e}", value);

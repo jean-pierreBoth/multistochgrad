@@ -7,6 +7,9 @@
 //! The behaviour is robust to a bad initialization of initial_position.
 //! With a position set to [0.5 ..... 0.5] the convergence is monotonous slower.
 //! but it is more than 4 times slower than scsg
+//! 
+//!  With 2000 iterations , batch_size = 1000, step_size = 0.1 it takes 1mn12s to reach y=0.47
+//! with a bad initialization with 0.5
 
 extern crate env_logger;
 extern crate rand;
@@ -75,8 +78,6 @@ fn main () {
     //
     // minimize
     //
-    // eta_0, m_0, b_0 , B_0
-    let nb_iter = 2000;
     let sag_pb = SagDescent::new(1000,  // batch_size
                                 0.1,         // step size
                                 );
@@ -84,7 +85,8 @@ fn main () {
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     // do a bad initialization , fill with 0 is much better!!
     initial_position.fill(0.5);
-    let solution = sag_pb.minimize(&regr_l, &initial_position , nb_iter);
+    let nb_iter = 2000;
+    let solution = sag_pb.minimize(&regr_l, &initial_position , Some(nb_iter));
     println!(" solution with minimized value = {:2.4E}", solution.value);
     //
     // get image of coefficients to see corresponding images.
