@@ -21,10 +21,40 @@ use crate::types::*;
 use crate::monitor::*;
 
 
+///
+/// Provides stochastic Average Gradient Descent optimization described in : 
+///  *"Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)*
+///   M.Schmidt, N.LeRoux, F.Bach
+/// 
+/// We implemented a mini batch version as it consumes less memory. Moreover
+/// we found it is more stable.
+/// 
+/// The algorithm never computes a full gradient. It initialize the direction of propagation
+/// as a null vector. 
+/// The terms of the sum as grouped in blocks. At each iteration
+/// the gradient of randomly selected block is computed at the current position added
+/// to the current total gradient from which the gradient of the selected block at
+/// the last iteration it was selected. So the current estimate of the gradient 
+/// is made of blocks contributions that are more or less oudated.
+/// 
+/// It must be noted that a gradients of each block are stored and updated for future use when
+/// the block is reused.
+/// The larger the block size, the lesser the number of blocks but more work is done at each iteration.
+/// 
+/// 
+/// Precisely we have the following sequence:  
+/// - random selection of a block  
+/// - computation of the partial gradient of the sum of terms in the block 
+/// - computation of direction of propagation as the batch gradient + gradient of block at current position 
+///                     - gradient of the same block last time it was computed.
+/// - update of position
+/// 
+/// The step size is constant (and could automatically adjusted to Lipschitz constant in a later work)
+/// 
 pub struct SagDescent {
     //
     rng: Xoshiro256PlusPlus,
-    /// batch size for artial update of gradient
+    /// batch size for partial update of gradient
     batch_size : usize,
     /// step size
     step_size : f64,
@@ -35,6 +65,7 @@ pub struct SagDescent {
 
 
 impl SagDescent {
+    /// size of batch or block to use.
     pub fn new(batch_size: usize, step_size : f64) -> SagDescent {
         //
         trace!(" batch size {:?} step_size {:2.4E} ", batch_size, step_size);

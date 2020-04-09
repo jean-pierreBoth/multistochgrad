@@ -46,9 +46,18 @@ Small tests consist in a line fitting problem that is taken  from the crate opti
 
 ### SCSG logisitc regression
 
-|  initialization |  nb iter | B_0   |   b_0     | y value | time |
-|  ---            |   ----   |  ---  |   ----    |  ----   | ---  |
-|  0.5 ... 0.5    | 100      |0.015  |   0.0015  | 0.49    |  26s  |
+For the signification of the parameters B_0 , b_O, see documentation of SCSG.
+
+* initialization position : 9 images with constant pixel = 0.5
+initial error : 6.94
+
+| nb iter | B_0    |   b_0    | step   | y value  | time    |
+|  ---    |----    |  ----    | ------ |   ----   |  ----   |
+| 100     | 0.015  |  0.0015  |  0.5   |  0.49    |  13.4s  |
+| 100     | 0.010  |  0.0015  |  0.5    |  0.50   |  14.0s  |
+| 200     | 0.010  |  0.0015  |  0.5    |  0.37   |  26s    |
+| 100     | 0.015  |  0.0015  |  0.25   |  0.65   |  13.4s  |
+|  50     | 0.015  |  0.0015  |  0.5    |  0.75   |  6.9s   |
 
 ### SVRG logistic regression
 
