@@ -76,7 +76,7 @@ fn main () {
     // minimize
     //
     // eta_0, m_0, b_0 , B_0
-    let nb_iter = 50000;
+    let nb_iter = 2000;
     let sag_pb = SagDescent::new(1000,  // batch_size
                                 0.1,         // step size
                                 );
