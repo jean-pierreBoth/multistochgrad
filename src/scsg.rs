@@ -44,12 +44,12 @@ pub struct  BatchSizeInfo {
 ///       Bⱼ evolves as :   large_batch_size_init * nbterms * alfa^(2j)
 ///       mⱼ evolves as :   m_zero *  nbterms * alfa^(3j/2)
 ///       bⱼ evolves as :   b_0 * alfa^j
-///       ηⱼ evolves as :   eta_0 * alfa^j
+///       ηⱼ evolves as :   eta_0 / alfa^j
 ///     
 ///     where alfa is computed to be slightly greater than 1.  
 ///     In fact α is chosen so that :  B_0 * alfa^(2*nbiter) = nbterms
 /// 
-///  The evolution of Bⱼ is bounded above by nbterms/10 and bⱼ by nbterms/100
+///  The evolution of Bⱼ is bounded above by nbterms/10 and bⱼ by nbterms/100.  
 ///  The size of small batch must stay small so b₀ must be small (typically 1 seems OK)
 ///  
 /// 
@@ -67,7 +67,7 @@ pub struct StochasticControlledGradientDescent {
 
 impl  StochasticControlledGradientDescent {
     /// args are :
-    ///   - initial value of step along gradient value of 0.5 is a good fefault choice.
+    ///   - initial value of step along gradient value of 0.5 is a good default choice.
     ///   - fraction of nbterms to initialize large batch size : a good default value is around 0.01 so that  
     ///              large batch size begins at 0.01 * nbterms
     ///   - m_zero : a good value is 0.1 so that times large_batch_size_init so mⱼ << Bⱼ
