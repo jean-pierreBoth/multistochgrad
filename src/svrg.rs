@@ -39,8 +39,11 @@ use crate::monitor::*;
 ///     - computation of the gradient of the term at current position and the gradient
 ///                     at position before mini batch
 ///     - computation of direction of propagation as the batch gradient + gradient of term at current 
-///                     position - gradient of term at position before mini batch sequence
-///     - update of position
+///                     position -  gradient of term at position before mini batch sequence
+///     - update of position with adequate step size
+/// 
+/// The step size used in the algorithm is constant and according to the ref paper it should be of the order of
+/// L/4 where L is the lipschitz constant of the function to minimize
 /// 
 pub struct SVRGDescent {
     rng: Xoshiro256PlusPlus,
@@ -52,7 +55,7 @@ pub struct SVRGDescent {
 
 impl SVRGDescent  {
     /// nb_mini_batch : number of mini batch   
-    /// step_size used in position update
+    /// step_size used in position update.
     pub fn new(nb_mini_batch : usize , step_size : f64) -> SVRGDescent {
         //
         trace!(" nb_mini_batch {:?} step_size {:2.4E} ", nb_mini_batch, step_size);
