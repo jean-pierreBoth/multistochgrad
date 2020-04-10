@@ -54,7 +54,7 @@ Run times are those obtained on a 8 i7-cores laptop at 2.7Ghz
 For the signification of the parameters B_0 , b_O, see documentation of SCSG.
 Here we give some results:
 
-* initialization position : 9 images with *constant pixel = 0.5*
+* initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
 | nb iter | B_0    |   b_0    | step    | y value | time(s) |
@@ -65,7 +65,7 @@ error at initial position: 6.94
 | 100     | 0.015  |  0.0015  |  0.25   |  0.65   |  13.4  |
 |  50     | 0.015  |  0.0015  |  0.5    |  0.75   |  6.9   |
 
-* initialization position : 9 images with *constant pixel = 0.0*
+* initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
 
 | nb iter | B_0    |   b_0    | step   | y value  | time(s) |
@@ -76,7 +76,7 @@ error at initial position: 2.3
 
 ### SVRG logistic regression
 
-* initialization position : 9 images with *constant pixel = 0.0*
+* initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
 
 | nb iter |  nb mini batch     | step    | y value  | time(s) |
@@ -95,7 +95,7 @@ Last line shows that the step must be small.
 
 ### SAG logisitc regression
 
-* initialization position : 9 images with *constant pixel = 0.5*
+* initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
 | nb iter |  batch size  | step   | y value  | time(s) |

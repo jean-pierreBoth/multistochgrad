@@ -1,20 +1,21 @@
 // Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
 //
 //! This file is inspired by the crate optimisation written by  Oliver Mader b52@reaktor42.de
-//! We kept the traits Function, FunctionC1, Summation and SummationC1 which provides
+//! I kept the traits Function, FunctionC1, Summation and SummationC1 which provides
 //! the interface accessible to users defining a minimisation problem.
 //! 
 //! 
 //! In fact when minimising summation function we often seek to minimize the mean of the summation
 //! which is the same but scales gradient and this makes the implementation of batched stochastic gradient
 //! more natural as we always computes mean gradient over terms taken into account.
-//! I made the following changes:
+//! 
+//! I kept the names of methods and reimplemented according to the following changes:
 //! 
 //! 1. In batched stochastic gradient we need to define mean gradient on a subset of indexes. 
-//! 2. We use the crate ndarray which provides addition of vector and enables rayon for //
-//! 3. We get rid of the iterator on indexes as indexes are always usize.
+//! 2. I use the crate ndarray which provides addition of vector and enables rayon for //
+//! 3. I got rid of the iterator on indexes as indexes are always usize.
 //! 4. The function minimize in Trait Minimizer takes a generic Argument for future extension
-//! 5. We use rayon to compute value of summation for values and gradients with parallel iterators
+//! 5. I use rayon to compute value of summation for values and gradients with parallel iterators
 //! 
 
 
