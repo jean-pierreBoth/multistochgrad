@@ -1,6 +1,6 @@
 # Multistochgrad
 
-**WARNING : This is a preliminary version of crate not yet "published" in Rust crate repositiry**.
+**WARNING : This is a preliminary version of a crate not yet "published" in Rust crate repositiry**.
 
 This crate provides a Rust implementation of some stochastic gradient algorithms.
 
@@ -18,7 +18,7 @@ The implemented algorithms are:
     [SCSD-2](https://arxiv.org/abs/1609.03261)
 
 * The SVRG algorithm described in the paper by R. Johnson and T. Zhang
-"Accelerating Stochastic Gradient Descent using Predictive Variance Reduction" (2019).  
+"Accelerating Stochastic Gradient Descent using Predictive Variance Reduction" (2013).  
 [Advances in Neural Information Processing Systems, pages 315–323, 2013](https://papers.nips.cc/paper/4937-accelerating-stochastic-gradient-descent-using-predictive-variance-reduction.pdf)
 
 * The SAG algorithm described in :
@@ -49,7 +49,7 @@ The logistic regression, with 10 classes,  is tested with the 3 algorithms and s
 Times are obtained by launching twice the example to avoid the compilation time of the first pass.
 Run times are those obtained on a 8 i7-cores laptop at 2.7Ghz
 
-### SCSG logisitc regression
+### SCSG logistic regression
 
 For the signification of the parameters B_0 , b_O, see documentation of SCSG.
 Here we give some results:
