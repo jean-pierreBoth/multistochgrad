@@ -30,22 +30,34 @@ pub struct  BatchSizeInfo {
     step_size : f64,
 }
 
-/// Provides _stochastic_ Gradient Descent optimization
+/// Provides Stochastic Controlled Gradient Descent optimization
 /// as described in Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
 /// 
-///     let nbterms be the number of terms in function to minimize and j the iteration number:
+/// One iteration j consists in a large batch of size Bⱼ and then a number noted mⱼ of small batches
+/// of size bⱼ and update position with a step ηⱼ
 /// 
-///     large batch size  evolves as    :    nbterms * large_batch_size_init  * alfa^(2*j)
-///     number of mini batch evolves as :    m_zero *  alfa^(3*j/2)
-///     size of a mini batch evolves as : mini_batch_size_init * nbterms * alfa^(2*j)
-///      
-///     where alfa is computed to be slightly greater than 1.
+/// The papers establishes rates of convergence depending on the ratio 
+/// mⱼ/Bⱼ , bⱼ/mⱼ and ηⱼ/bⱼ and their products.
+///  
+/// If nbterms is the number of terms in function to minimize and j the iteration number:
+/// 
+///       Bⱼ evolves as :   large_batch_size_init * nbterms * alfa^(2j)
+///       mⱼ evolves as :   m_zero *  nbterms * alfa^(3j/2)
+///       bⱼ evolves as :   b_0 * alfa^j
+///       ηⱼ evolves as :   eta_0 * alfa^j
+///     
+///     where alfa is computed to be slightly greater than 1.  
+///     In fact α is chosen so that :  B_0 * alfa^(2*nbiter) = nbterms
+/// 
+///  The evolution of Bⱼ is bounded above by nbterms/10 and bⱼ by nbterms/100
+///  The size of small batch must stay small so b₀ must be small (typically 1 seems OK)
+///  
 /// 
 pub struct StochasticControlledGradientDescent {
     rng: Xoshiro256PlusPlus,
     /// step_size initialization
     eta_zero : f64,
-    /// parameter governing evolution of inner_loop_size
+    /// fraction of nbterms to consider in initialization of mⱼ governing evolution of nb small iterations
     m_zero: f64,
     /// m_0 in the paper
     mini_batch_size_init : usize,
@@ -54,12 +66,13 @@ pub struct StochasticControlledGradientDescent {
 }
 
 impl  StochasticControlledGradientDescent {
-    /// args are 
+    /// args are :
     ///   - initial value of step along gradient value of 0.5 is a good fefault choice.
-    ///   - base value for large batch size : a good default value is between 0.01 and 0.1 times the
-    ///   - m_zero : a good value is 0.1 times large_batch_size_init
-    ///   - base value for size of mini_batchs : a value àf 1 is a good default choice
-    ///     number of terms in function to minimize
+    ///   - fraction of nbterms to initialize large batch size : a good default value is around 0.01 so that  
+    ///              large batch size begins at 0.01 * nbterms
+    ///   - m_zero : a good value is 0.1 so that times large_batch_size_init so mⱼ << Bⱼ
+    ///   - base value for size of mini_batchs : a value of 1 is a good default choice
+    /// 
     pub fn new(eta_zero : f64, m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: f64) -> StochasticControlledGradientDescent {
         //
         if large_batch_size_init >  1. {

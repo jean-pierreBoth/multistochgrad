@@ -155,7 +155,7 @@ impl<D:Dimension, S: SummationC1<D> > FunctionC1<D> for S {
         gradient.fill(0.);
         let mut gradient_term : Array<f64, D> = position.clone();
         gradient_term.fill(0.);
-        // CAVEAT to //
+        // CAVEAT : user parametrization ?
         if self.terms() < 2000 {
             for term in 0..self.terms() {
                self.term_gradient(position, &term, &mut gradient_term);
