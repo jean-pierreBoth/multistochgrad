@@ -103,7 +103,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SVRGDescent {
 
         let mut iteration : usize = 0;
         let nb_terms = function.terms();
-        let mut monitoring = Vec::<IterRes>::with_capacity(nb_max_iterations);
+        let mut monitoring = IterationRes::<D>::new(nb_max_iterations, SolMode::Last);
         //
         let mut  term_gradient_current : Array<f64, D>;
         term_gradient_current = position.clone();
@@ -152,10 +152,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SVRGDescent {
 
             value = function.value(&position);
             let gradnorm = norm_l2(&direction);
-            monitoring.push(IterRes {
-                value : value,
-                gradnorm : gradnorm,
-            });
+            monitoring.push(value, &position, gradnorm);
             //
             if log_enabled!(Debug) {
                 trace!(" direction {:2.6E} ", &gradnorm);

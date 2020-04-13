@@ -263,6 +263,7 @@ impl <D:Dimension> Evaluation<D> for Solution<D> {
 
 
 
+
 #[allow(dead_code)]
 pub fn norm_l2<D:Dimension>(gradient : &Array<f64,D>) -> f64 {
     let norm = gradient.fold(0., |norm, x |  norm+ (x * x));

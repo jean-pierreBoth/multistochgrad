@@ -111,7 +111,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
         // 
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
-        let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
+        let mut monitoring = IterationRes::<D>::new(nb_max_iterations, SolMode::Last);
         //
         let mut iteration = 0;
         //
@@ -165,10 +165,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
             // monitoring
             value = function.value(&position);
             let gradnorm = crate::types::norm_l2(&direction);
-            monitoring.push(IterRes {
-                value : value,
-                gradnorm : gradnorm,
-            });
+            monitoring.push(value, &position, gradnorm);
             if log_enabled!(Debug) && (iteration % nb_terms == 0) ||  iteration % 10 == 0 {
 //                trace!(" position {:2.6E} ", &position);
 //                trace!(" direction {:2.6E} ", &direction);

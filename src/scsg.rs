@@ -236,7 +236,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
         let mut iteration : usize = 0;
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
-        let mut monitoring = Vec::<IterRes>::with_capacity(nb_terms);
+        let mut monitoring = IterationRes::<D>::new(nb_max_iterations, SolMode::Last);
         let batch_growing_factor = self.estimate_batch_growing_factor(nb_max_iterations, function.terms());
         // temporary gradients passed by ref to avoid possibly large reallocation
         let mut large_batch_gradient: Array<f64, D> = position.clone();
@@ -295,10 +295,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
             // some monitoring
             value = function.value(&position);
             let gradnorm = norm_l2(&direction);
-            monitoring.push(IterRes {
-                value : value,
-                gradnorm : gradnorm,
-            });
+            monitoring.push(value, &position, gradnorm);
             if log_enabled!(Debug) {
                 trace!(" direction {:2.6E} ", gradnorm);
                 debug!("\n\n Iteration {:?} y = {:2.4E}", iteration, value);
@@ -306,6 +303,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
             // convergence control or max iterations control
             if iteration >= nb_max_iterations {
                 info!("Reached maximal number of iterations required , stopping optimization");
+
                 return Solution::new(position, value);
             }
         } // end global loop

@@ -1,6 +1,6 @@
 # Multistochgrad
 
-**WARNING : This is a preliminary version of a crate not yet "published" in Rust crate repositiry**.
+**WARNING : This is a preliminary version of a crate not yet "published" in Rust crate repository**.
 
 This crate provides a Rust implementation of some stochastic gradient algorithms.
 
@@ -35,7 +35,7 @@ Further details on the algorithms are in the doc of files scsg.rs, svrg.rs, sag.
 (run **cargo doc --no-deps** as usual to get html generated docs) and in the reference papers.
 
 The implementation is based on the `ndarray` and `rayon` crates that provide respectiveley efficient
-array manipulation and transparent threaded computations. All batch computation of size greater than 1000 temrs
+array manipulation and transparent threaded computations. All batch computation of size greater than 1000 terms
 are multithreaded.
 
 ## Examples and tests
@@ -47,7 +47,7 @@ Examples are based on logisitc regression applied to digits MNIST database
 handwritten digits form 0 to 9.  
 The logistic regression, with 10 classes,  is tested with the 3 algorithms and some comments are provided, comparing the results.
 Times are obtained by launching twice the example to avoid the compilation time of the first pass.
-Run times are those obtained on a 8 i7-cores laptop at 2.7Ghz
+Run times are those obtained on a 4 i7 hyperthreaded cores laptop at 2.7Ghz
 
 ### SCSG logistic regression
 
@@ -63,7 +63,7 @@ error at initial position: 6.94
 | 100     | 0.010  |  0.0015  |  0.5    |  0.50   |  14.0  |
 | 200     | 0.015  |  0.0015  |  0.5    |  0.37   |  26    |
 | 100     | 0.015  |  0.0015  |  0.25   |  0.65   |  13.4  |
-|  50     | 0.015  |  0.0015  |  0.5    |  0.75   |  6.9   |
+|  50     | 0.015  |  0.0015  |  0.5    |  0.75   |  7.0   |
 
 * initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
