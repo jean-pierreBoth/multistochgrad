@@ -18,6 +18,7 @@ pub mod sag;
 pub mod mnist;
 mod monitor;
 pub mod applis;
+pub mod libext;
 
 lazy_static! {
     #[allow(dead_code)]

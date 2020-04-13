@@ -304,8 +304,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
             if iteration >= nb_max_iterations {
                 info!("Reached maximal number of iterations required , stopping optimization");
                 let rank = monitoring.check_monoticity();
-                println!("monotonous convergence from rank : {:?}", rank);
-
+                info!(" monotonous convergence from rank : {:?}", rank);
                 return Solution::new(position, value);
             }
         } // end global loop

@@ -161,6 +161,8 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SVRGDescent {
             // convergence control or max iterations control
             if iteration >= nb_max_iterations {
                 info!("Reached maximal number of iterations required , stopping optimization");
+                let rank = monitoring.check_monoticity();
+                info!(" monotonous convergence from rank : {:?}", rank);
                 return Solution::new(position, value);
             }
         } // end global loop
