@@ -31,14 +31,23 @@ pub struct  BatchSizeInfo {
 }
 
 /// Provides Stochastic Controlled Gradient Descent optimization
-/// as described in Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
+/// Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
 /// 
 /// One iteration j consists in a large batch of size Bⱼ and then a number noted mⱼ of small batches
-/// of size bⱼ and update position with a step ηⱼ
+/// of size bⱼ and update position with a step ηⱼ.
+/// The number of mini batch is descrbed by a random variable with a geometric law.
 /// 
 /// The papers establishes rates of convergence depending on the ratio 
 /// mⱼ/Bⱼ , bⱼ/mⱼ and ηⱼ/bⱼ and their products.
 ///  
+/// We stick to the description made in this paper. The second paper :  
+/// "Less than a single pass : stochastically controlled stochastic gradient"  
+/// describes a simplified version where the mini batches consist in just one term
+/// and the number of mini batch is set to the mean of the geometric variable corresponding to
+/// number of mini batches.  
+/// We find that the theoretical description
+/// of the algorithm is more stable when initialization of the algorithm varies.
+/// 
 /// If nbterms is the number of terms in function to minimize and j the iteration number:
 /// 
 ///       Bⱼ evolves as :   large_batch_size_init * nbterms * alfa^(2j)
