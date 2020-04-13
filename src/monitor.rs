@@ -74,12 +74,14 @@ impl <D:Dimension> IterationRes<D> {
 impl <D:Dimension> IterationRes<D> {
     /// returns rank of iter from which value is monotone decreasing.
     pub fn check_monoticity(&self) -> usize {
-        for i in self.gradnorm.len()-1..0 {
-            if self.gradnorm[i+1] < self.gradnorm[i+1] {
-                return i
+        let mut last = self.v_step.len() -1;
+        while last >= 1 {
+            if self.v_step[last-1] < self.v_step[last] {
+                break;
             }
-        }
-        return 0;
+            last = last -1;
+        };
+        return last+1;
     }
 }
 
