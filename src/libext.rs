@@ -3,6 +3,7 @@
 
 use std::os::raw::*;
 
+use std::ptr;
 
 extern crate env_logger;
 extern crate rand;
@@ -14,11 +15,18 @@ use ndarray::prelude::*;
 
 
 use crate::types::*;
+use crate::scsg::*;
 
 /// For Julia the API will need to pass functions defining
-/// trait Function and Summation
+/// trait Function and Summation. 
+// recall the following from std::fn doc : In addition, function pointers of any signature, ABI, or safety are Copy, 
+// and all safe function pointers implement Fn, FnMut, and FnOnce.
 
 
+/// This is the Objective functio we minimize
+/// It takes a pointer to a position , length of position vector   then return a score
+/// 
+type ValueFnPtr = extern "C" fn(*const f64, len : c_ulong) -> f64;
 
 
 /// This type is for function with a C-API
@@ -53,6 +61,12 @@ impl FfiProblem {
 
 } // end of impl block for FfiProblem
  
+
+
+
+
+
+
 impl Summation<Ix1> for FfiProblem {
     /// terms implementation
     fn terms(&self) -> usize {
@@ -79,4 +93,92 @@ impl SummationC1<Ix1> for  FfiProblem {
         let grad_ptr = gradient.as_mut_ptr();
         (self.term_gradient_f)(pos_ptr, grad_ptr, len as u64, *term as u64);
     }
+}
+
+
+//=========================================
+/// 
+
+
+#[repr(C)]
+/// structure exported to foreign language and passing argument to StochasticControlledGradientDescent
+pub struct SCSG_Ffi {
+    /// step
+    pub(crate) eta_zero : f64,
+    /// fraction of nbterms to consider in initialization of mⱼ governing evolution of nb small iterations
+    pub(crate) m_zero: f64,
+    /// m_0 in the paper
+    pub(crate) mini_batch_size_init : u64,
+    /// related to B_0 in Paper. Fraction of terms to consider in initialisation of B_0
+    pub(crate) large_batch_size_init: f64,
+    ///
+    pub(crate) nb_iter: u64,
+    ///  size of pointer to initial position
+    pub(crate) pos_len : u64, 
+    /// 
+    pub(crate) initial_posiiton : *const f64,
+}
+
+
+
+
+//===========================================================================================
+
+#[repr(C)]
+pub struct SVRG_Ffi {
+
+}
+
+
+
+
+
+#[repr(C)]
+pub struct SAG_Ffi {
+
+}
+
+
+#[repr(C)]
+/// The structure returned to C/Julia
+pub struct FfiSolution {
+    /// solution
+    value : f64,
+    /// position solution
+    position : *const f64,
+    /// len of position (in fact known by client)
+    len : i64,
+}
+
+
+
+pub extern "C" fn minimize_scsg(scsg_pb : *const SCSG_Ffi, to_minimize : &FfiProblem) -> *const FfiSolution {
+    // allocate StochasticControlledGradientDescent
+    let eta_zero;
+    let m_zero;
+    let mini_batch_size_init;
+    let large_batch_size_init;
+    let nb_iter;
+    let initial_position: Array1<f64>;
+    //
+    unsafe {
+        eta_zero = (*scsg_pb).eta_zero;
+        m_zero = (*scsg_pb).m_zero;
+        mini_batch_size_init = (*scsg_pb).mini_batch_size_init as usize;
+        large_batch_size_init = (*scsg_pb).large_batch_size_init;
+        nb_iter = (*scsg_pb).nb_iter as usize;
+        // reconstruct initial_position
+        let len = (*scsg_pb).pos_len as usize;
+        let ptr = (*scsg_pb).initial_posiiton;
+        let slice = std::slice::from_raw_parts(ptr, len);
+        let data_v = Vec::from(slice);
+        initial_position = Array1::<f64>::from(data_v);
+    }
+    let scsg_pb  = StochasticControlledGradientDescent::new(eta_zero, m_zero, mini_batch_size_init,
+                                                         large_batch_size_init);
+    // solve minimization pb
+    let solution = scsg_pb.minimize(to_minimize, &initial_position , Some(nb_iter));
+    // convert boack to FfiSolution
+    //
+    ptr::null()
 }
