@@ -147,8 +147,24 @@ pub struct FfiSolution {
     /// position solution
     position : *const f64,
     /// len of position (in fact known by client)
-    len : i64,
+    len : u64,
 }
+
+impl FfiSolution {
+    fn new(value:f64, position : &Array1<f64>) -> Self {
+        let len = position.len();
+        // here , if we were to use Array2 we would have to consider that Rust ndarray has row order
+        // as C , but Julia has column order as Fortran!!!
+        let ptr = position.as_ptr();
+        std::mem::forget(position);
+        FfiSolution {
+            value : value,
+            position : ptr,
+            len : len as u64,
+        }
+    } // end of new
+
+}  // end impl FfiSolution
 
 
 
@@ -179,6 +195,7 @@ pub extern "C" fn minimize_scsg(scsg_pb : *const SCSG_Ffi, to_minimize : &FfiPro
     // solve minimization pb
     let solution = scsg_pb.minimize(to_minimize, &initial_position , Some(nb_iter));
     // convert boack to FfiSolution
+    let ffi_solution = FfiSolution::new(solution.get_value(), solution.position());
     //
     ptr::null()
 }
