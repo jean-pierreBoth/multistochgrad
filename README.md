@@ -86,11 +86,11 @@ error at initial position: 2.3
 |  50     |     2000           |  0.0015 |  0.42    |  23    |
 |  50     |     1000           |  0.005  |  0.52    |  21    |
 
-We see between the first and the second line that running mini batch of one randomly selected one
-comes for free in cpu time but the precision is better.
+We see between the first and the second line that running mini batch of size one randomly selected
+comes for free in cpu time, so we can run many mini-batch and get a better precision.
 The third line shows that with too many mini batch we do not gain any more. In fact
-monitoring the convergence shows that we begins to obsrve instability due to the length of mini batches
-(in fact we had y = 0.41 at iteration 33)
+monitoring the convergence shows that we begins to observe instability due to the length of mini batches
+(in fact we had y = 0.41 at iteration 33).
 Last line shows that the step must be small.
 
 ### SAG logisitc regression
@@ -99,7 +99,7 @@ Last line shows that the step must be small.
 error at initial position: 6.94
 
 | nb iter |  batch size  | step   | y value  | time(s) |
-|  :---:  |  :---:       |  :---: | ------   |   ----  |
+|  :---:  |  :---:       |  :---: | :----:   |   ----  |
 |  2000   |  1000        |  0.1   |  0.47    |   80    |
 |  1000   |  2000        |  0.1   |  0.90    |   45    |
 |  2000   |  2000        |  0.1   |  0.47    |   90    |
@@ -128,7 +128,7 @@ By default the crate is a standalone project and builds a static libray and exec
 To be used with the companion Julia package it is necessary to build a dynamic library.
 This can be done by just uncommenting (i.e get rid of the #) in file Cargo.toml the line:
 
-*#crate-type = ["dylib"]*
+*#crate-type = ["cdylib"]*
 
 and rerun the command: cargo build --release.
 

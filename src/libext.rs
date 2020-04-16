@@ -3,7 +3,6 @@
 
 use std::os::raw::*;
 
-use std::ptr;
 
 extern crate env_logger;
 extern crate rand;
@@ -113,10 +112,6 @@ pub struct SCSG_Ffi {
     pub(crate) large_batch_size_init: f64,
     ///
     pub(crate) nb_iter: u64,
-    ///  size of pointer to initial position
-    pub(crate) pos_len : u64, 
-    /// 
-    pub(crate) initial_posiiton : *const f64,
 }
 
 
@@ -168,7 +163,7 @@ impl FfiSolution {
 
 
 
-pub extern "C" fn minimize_scsg(scsg_pb : *const SCSG_Ffi, to_minimize : &FfiProblem) -> *const FfiSolution {
+pub extern "C" fn minimize_scsg(scsg_pb : *const SCSG_Ffi, to_minimize : &FfiProblem, pos_ptr : *const f64, len_pos : u64) -> *const FfiSolution {
     // allocate StochasticControlledGradientDescent
     let eta_zero;
     let m_zero;
@@ -184,9 +179,7 @@ pub extern "C" fn minimize_scsg(scsg_pb : *const SCSG_Ffi, to_minimize : &FfiPro
         large_batch_size_init = (*scsg_pb).large_batch_size_init;
         nb_iter = (*scsg_pb).nb_iter as usize;
         // reconstruct initial_position
-        let len = (*scsg_pb).pos_len as usize;
-        let ptr = (*scsg_pb).initial_posiiton;
-        let slice = std::slice::from_raw_parts(ptr, len);
+        let slice = std::slice::from_raw_parts(pos_ptr, len_pos as usize);
         let data_v = Vec::from(slice);
         initial_position = Array1::<f64>::from(data_v);
     }
@@ -195,7 +188,7 @@ pub extern "C" fn minimize_scsg(scsg_pb : *const SCSG_Ffi, to_minimize : &FfiPro
     // solve minimization pb
     let solution = scsg_pb.minimize(to_minimize, &initial_position , Some(nb_iter));
     // convert boack to FfiSolution
-    let ffi_solution = FfiSolution::new(solution.get_value(), solution.position());
+    let ffi_solution = FfiSolution::new(solution.value(), solution.position());
     //
-    ptr::null()
+    return Box::into_raw(Box::new(ffi_solution));        
 }
