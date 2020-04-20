@@ -25,7 +25,7 @@ use crate::scsg::*;
 /// This is the Objective functio we minimize
 /// It takes a pointer to a position , length of position vector   then return a score
 /// 
-type ValueFnPtr = extern "C" fn(*const f64, len : c_ulong) -> f64;
+type ValueFnPtr = extern "C" fn( position : *const f64, len : c_ulong) -> f64;
 
 
 /// This type is for function with a C-API
@@ -42,6 +42,24 @@ type TermValueFnPtr = extern "C" fn(*const f64, len : c_ulong, term : c_ulong) -
 type TermGradientFnPtr = extern "C" fn(pos : *const f64, grad : *const f64, len : c_ulong, term : c_ulong) -> c_ulong;
 
 
+
+
+pub struct FFiObservations {
+    observations: Vec<(Array1<f64>, f64)>,
+}
+
+
+// initialize observations from C/Julia
+// nbobs  : is number of vector observations
+// dim    : is dimension of observations vector
+// datas  : a pointer to pointers to each vector observations
+
+#[no_mangle]
+pub  extern "C" fn initialize_observation(nb_obs : u64, dim : u64, datas : *mut *const f64) ->  *const FFiObservations {
+    std::ptr::null()
+}
+
+
 /// The structure describing a minimization problem form a FFI interface
 /// We do not have observations, we only have pointer to functions
 /// 
@@ -54,6 +72,16 @@ pub struct FfiProblem {
     term_gradient_f : TermGradientFnPtr,
 }
 
+
+#[no_mangle]
+pub extern "C" fn initialize_functions(nbterms_arg : u64, term_f : TermValueFnPtr, term_gradient : TermGradientFnPtr) -> *const FfiProblem {
+    let pb = FfiProblem {
+                nbterms : nbterms_arg as usize,
+                term_value_f : term_f,
+                term_gradient_f : term_gradient,
+         };
+    std::ptr::null()
+}
 
 impl FfiProblem {
     pub fn terms(&self) -> usize { self.nbterms }

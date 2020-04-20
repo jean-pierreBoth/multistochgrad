@@ -45,13 +45,15 @@ pub struct  BatchSizeInfo {
 /// describes a simplified version where the mini batches consist in just one term
 /// and the number of mini batch is set to the mean of the geometric variable corresponding to
 /// number of mini batches.  
-/// We find that the theoretical description
-/// of the algorithm is more stable when initialization of the algorithm varies.
+/// We adopt a mix of the two papers: 
+/// It seems letting the size of mini batch grow a little is more stable than keeping it to 1.
+/// (in particular when initialization of the algorithm varies.)
+/// but replacing the geometric law by its mean is really more stable due to the large variance of its law.
 /// 
 /// If nbterms is the number of terms in function to minimize and j the iteration number:
 /// 
 ///       Bⱼ evolves as :   large_batch_size_init * nbterms * alfa^(2j)
-///       mⱼ evolves as :   m_zero *  nbterms * alfa^(3j/2)
+///       mⱼ evolves as :   m_zero * alfa^(3j/2)
 ///       bⱼ evolves as :   b_0 * alfa^j
 ///       ηⱼ evolves as :   eta_0 / alfa^j
 ///     
@@ -66,9 +68,9 @@ pub struct StochasticControlledGradientDescent {
     rng: Xoshiro256PlusPlus,
     /// step_size initialization
     eta_zero : f64,
-    /// fraction of nbterms to consider in initialization of mⱼ governing evolution of nb small iterations
+    /// multiplicative factor in mⱼ,  governing evolution of nb small iterations
     m_zero: f64,
-    /// m_0 in the paper
+    /// b_0 in the paper
     mini_batch_size_init : usize,
     /// related to B_0 in Paper. Fraction of terms to consider in initialisation of B_0
     large_batch_size_init: f64,
@@ -77,11 +79,11 @@ pub struct StochasticControlledGradientDescent {
 impl  StochasticControlledGradientDescent {
     /// args are :
     ///   - initial value of step along gradient value of 0.5 is a good default choice.
+    ///   - m_zero : a good value is 0.1 so that  mⱼ << Bⱼ  and bⱼ/mⱼ small
+    ///   - base value for size of mini_batchs : a value of 1 is a good default choice
     ///   - fraction of nbterms to initialize large batch size : a good default value is around 0.01 so that  
     ///              large batch size begins at 0.01 * nbterms
-    ///   - m_zero : a good value is 0.1 so that times large_batch_size_init so mⱼ << Bⱼ
-    ///   - base value for size of mini_batchs : a value of 1 is a good default choice
-    /// 
+    ///
     pub fn new(eta_zero : f64, m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: f64) -> StochasticControlledGradientDescent {
         //
         if large_batch_size_init >  1. {
@@ -110,10 +112,9 @@ impl  StochasticControlledGradientDescent {
     }
 
     // batch growing factor cannot be too large, so it must be adjusted accoding to nbterms value, and nb_max_iterations
-    // We use the following rules.
-    // For large batch sizes:
-    //  1.   B_0 max(10, nbterms/100)
-    //  2.   B_0 * alfa^(2T) < nbterms
+    // we choose the batch growing factor alfa so that :
+    //     B_0 * alfa^(2*nb_max_iterations) < 1.
+    // (B_0 is the fraction of nbterms we take at beginning of iterations)
     fn estimate_batch_growing_factor(&self, nb_max_iterations : usize , nbterms:usize) -> f64 {
         let batch_growing_factor : f64;
         if self.m_zero > nbterms as f64 {
