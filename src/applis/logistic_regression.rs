@@ -27,10 +27,6 @@ pub struct LogisticRegression {
     nbclass : usize,
     // length of observation + 1. Values 1. in slot 0 of arrays.
     observations: Vec<(Array1<f64>, usize)>,
-    // As ndarray is by default with C storage (row oriented) we use the following scheme for storing data
-    // a row is coefficient array corresponding to (1 augmented observations)
-    // a column is coefficients by class.
-    // coefficients : Array2<f64>
 }
 
 
@@ -44,6 +40,13 @@ impl LogisticRegression {
 
 } // end of impl LogisticRegression
 
+
+
+/// We implement the trait Summation using 2 dimensional Arrays.
+/// We use the variable coefficients : Array2<f64> so that 
+/// a row is coefficient array corresponding to (1 augmented) observations and a column is coefficients by class.
+/// Recall that ndarray is by default with C storage (row oriented)
+/// 
 impl Summation<Ix2> for LogisticRegression {
     fn terms(&self) -> usize {
         self.observations.len()
