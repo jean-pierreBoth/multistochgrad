@@ -79,10 +79,10 @@ pub struct StochasticControlledGradientDescent {
 impl  StochasticControlledGradientDescent {
     /// args are :
     ///   - initial value of step along gradient value of 0.5 is a good default choice.
-    ///   - m_zero : a good value is 0.1 so that  mⱼ << Bⱼ  and bⱼ/mⱼ small
+    ///   - m_zero : a good value is 0.1*large_batch_size_init so that  mⱼ << Bⱼ
     ///   - base value for size of mini_batchs : a value of 1 is a good default choice
-    ///   - fraction of nbterms to initialize large batch size : a good default value is around 0.01 so that  
-    ///              large batch size begins at 0.01 * nbterms
+    ///   - fraction of nbterms to initialize large batch size : a good default value is between 0.01 and 
+    ///             0.015 large batch size begins at 0.01 * nbterms
     ///
     pub fn new(eta_zero : f64, m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: f64) -> StochasticControlledGradientDescent {
         //
@@ -117,8 +117,9 @@ impl  StochasticControlledGradientDescent {
     // (B_0 is the fraction of nbterms we take at beginning of iterations)
     fn estimate_batch_growing_factor(&self, nb_max_iterations : usize , nbterms:usize) -> f64 {
         let batch_growing_factor : f64;
-        if self.m_zero > nbterms as f64 {
-            warn!("m_zero > nbterms in functio to minimize, exiting");
+        // 
+        if self.m_zero * (nbterms as f64) < 1. {
+            warn!("m_zero fraction , should be greater than 1./ number of terms in sum");
             std::process::exit(1);
         }
         //
@@ -258,7 +259,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
         //
         let mut  mini_batch_gradient_origin : Array<f64, D>;
         mini_batch_gradient_origin = position.clone();
-        mini_batch_gradient_origin.fill(0.);  
+        mini_batch_gradient_origin.fill(0.); 
         // now we work      
         loop {
             // get iteration parameters
@@ -272,7 +273,6 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
             // compute gradient on large batch index set and store initial position
             function.mean_partial_gradient(&position, &large_batch_indexes, &mut large_batch_gradient);
             let position_before_mini_batch = position.clone();
-            let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
             let n_j = self.get_nb_small_mini_batches(&iter_params);
             // loop on small batch iterations
@@ -280,7 +280,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
                 // sample mini batch terms
                 let terms = sample_without_replacement_iter(iter_params.mini_batch, 0..nb_terms, nb_terms, &mut rng);
                 //
-                function.mean_partial_gradient(&position_during_mini_batches, &terms, &mut mini_batch_gradient_current);
+                function.mean_partial_gradient(&position, &terms, &mut mini_batch_gradient_current);
                 //
                 function.mean_partial_gradient(&position_before_mini_batch, &terms, &mut mini_batch_gradient_origin);
                 //
@@ -297,10 +297,9 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
                 //
                 direction = &mini_batch_gradient_current - &mini_batch_gradient_origin + &large_batch_gradient;
                 // step into the direction of the negative gradient
-                position_during_mini_batches = position_during_mini_batches - step_size * &direction;
+                position = position - step_size * &direction;
             } // end mini batch loop
             // update position
-            position = position_during_mini_batches.clone();
             iteration += 1;
             // some monitoring
             value = function.value(&position);
