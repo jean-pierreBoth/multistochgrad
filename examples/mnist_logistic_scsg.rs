@@ -64,6 +64,7 @@ fn main () {
     for k in 0..nb_images {
         let mut image = Array1::<f64>::zeros(1+nb_row*nb_column);
         let mut index = 0;
+        image[index] = 1.;
         for i in 0..nb_row {
             for j in 0..nb_column {
                 image[index] = images[[i,j,k]] as f64/256.;
@@ -85,7 +86,7 @@ fn main () {
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     // do a bad initializion , fill with 0 is much better!!
-    initial_position.fill(0.0);
+    initial_position.fill(0.5);
     //
     let nb_iter = 50;
     let solution = scgd_pb.minimize(&regr_l, &initial_position , Some(nb_iter));
@@ -93,7 +94,7 @@ fn main () {
     //
     // get image of coefficients to see corresponding images.
     //
-    let image_fname = String::from("classe.img");
+    let image_fname = String::from("classe_scsg.img");
     for k in 0..9 {
 
         let mut k_image_fname : String = image_fname.clone();

@@ -79,7 +79,7 @@ fn main () {
     // minimize
     //
     let sag_pb = SagDescent::new(1000,  // batch_size
-                                0.1,         // step size
+                                0.2         // step size
                                 );
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
