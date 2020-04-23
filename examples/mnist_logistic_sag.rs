@@ -65,6 +65,8 @@ fn main () {
     for k in 0..nb_images {
         let mut image = Array1::<f64>::zeros(1+nb_row*nb_column);
         let mut index = 0;
+        image[index] = 1.;
+        index += 1;
         for i in 0..nb_row {
             for j in 0..nb_column {
                 image[index] = images[[i,j,k]] as f64/256.;
@@ -79,13 +81,13 @@ fn main () {
     // minimize
     //
     let sag_pb = SagDescent::new(1000,  // batch_size
-                                0.2         // step size
+                                0.3         // step size
                                 );
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
     // do a bad initialization , fill with 0 is much better!!
     initial_position.fill(0.5);
-    let nb_iter = 2000;
+    let nb_iter = 1000;
     let solution = sag_pb.minimize(&regr_l, &initial_position , Some(nb_iter));
     println!(" solution with minimized value = {:2.4E}", solution.value);
     //
