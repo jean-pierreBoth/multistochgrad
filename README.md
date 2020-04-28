@@ -25,7 +25,11 @@ The implemented algorithms are:
 "Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)
 M.Schmidt, N.LeRoux, F.Bach
 
-All algorithms alternates some form of large batch computation (computing gradient of many terms of the sum)
+These algorithms minimize functions given by an expression:
+
+        f(x) = 1/n ∑ fᵢ(x) where fᵢ is a convex function.
+
+The algorithms alternate some form of large batch computation (computing gradient of many terms of the sum)
 and small or mini batches (computing a small number of terms, possibly just one, term of the gradient)
 and updating position by combining these global and local gradients.
 
@@ -51,14 +55,16 @@ Run times are those obtained on a 4 hyperthreaded i7-cores laptop at 2.7Ghz
 
 ### SCSG logistic regression
 
-For the signification of the parameters B_0 , b_O, see documentation of SCSG.
+For the signification of the parameters B_0 , m_O, see documentation of SCSG. b_0 was set to 1
+in all the runs.
+
 Here we give some results:
 
 * initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
-| nb iter | B_0    |   b_0    | step_0  | y value | time(s) |
-|  :---:  |:---:  |  :-----:  | :----:  |   ----  |  ----   |
+| nb iter | B_0    |   m_0    | step_0  | y value | time(s) |
+|  :---:  | :---:  |  :-----: | :----:  |   ----  |  ----   |
 | 100     | 0.015  |  0.0015  |  0.5    |  0.49   |  13.4  |
 | 100     | 0.010  |  0.0015  |  0.5    |  0.50   |  14.0  |
 | 200     | 0.015  |  0.0015  |  0.5    |  0.37   |  26    |
@@ -68,7 +74,7 @@ error at initial position: 6.94
 * initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
 
-| nb iter | B_0    |   b_0    | step_0  | y value  | time(s) |
+| nb iter | B_0    |   m_0    | step_0  | y value  | time(s) |
 |  ---    |----    |  ----    | ------  |   ----   |  ----  |
 |  200    | 0.015  |  0.0015  |  0.5    |  0.31    |  25    |
 |  100    | 0.015  |  0.0015  |  0.5    |  0.36    |  13    |
@@ -116,17 +122,16 @@ error at initial position: 6.94
 |  2000   |  2000        |  0.1   |  0.46    |   91    |
 |  1000   |  1000        |  0.2   |  0.47    |   40    |
 |  2000   |  1000        |  0.2   |  0.37    |   80    |
-|  1000   |  1000        |  0.3   |  0.40    |   40    | 
+|  1000   |  1000        |  0.3   |  0.40    |   38    |
 
 ### Results
 
 Tests show that the SCSG outperforms SVRG and SAG by a factor 2 at equivalent precision in
-both case with a correct initialization and one far from the solution although 
-there are more parameters to fit.
+both case with a correct initialization and one far from the solution although there are more parameters to fit.
 
 ## Acknowledgement
 
-This crate is indebted to the crate optimisation from which I kept the traits `Function`, `Summation`
+This crate is indebted to the crate **optimisation** from which I kept the traits `Function`, `Summation`
 defining the user interface after various modifications which are detailed in the file ``types.rs``
 
 ## Julia implementation

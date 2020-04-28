@@ -55,11 +55,11 @@ fn main () {
     let mnist_data = MnistData::new(String::from(IMAGE_FNAME_STR), String::from(LABEL_FNAME_STR)).unwrap();
     let images = mnist_data.get_images();
     let labels = mnist_data.get_labels();
-    // transform into logisitc regression
-    let mut observations = Vec::<(Array1<f64>, usize)>::with_capacity(10);
     // nb_images is length of third compoenent of array dimension
     let (nb_row, nb_column, nb_images) = images.dim();   // get t-uple from dim method
     assert_eq!(nb_images, labels.shape()[0]);            // get slice from shape method...
+    // transform into logisitc regression
+    let mut observations = Vec::<(Array1<f64>, usize)>::with_capacity(nb_images);
     //
     for k in 0..nb_images {
         let mut image = Array1::<f64>::zeros(1+nb_row*nb_column);
