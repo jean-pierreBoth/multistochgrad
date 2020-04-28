@@ -55,19 +55,22 @@ impl Summation<Ix2> for LogisticRegression {
     fn term_value(&self, coefficients : &Array2<f64> , term: usize) -> f64 {
         // extract vector i of data and its class
         let (ref x, term_class) = self.observations[term];
+        //
+        let mut dot_xi = Array1::<f64>::zeros(self.nbclass-1);
+        //
         let mut log_arg = 1.0f64;
         for i in 0..self.nbclass-1 {
             // take i row
             assert_eq!(x.len(), coefficients.index_axis(Axis(0),i).len());
-            let dot_i = x.dot(&coefficients.slice(s![i, ..]));
+            dot_xi[i] = x.dot(&coefficients.slice(s![i, ..]));
             //        we could do
             //        let dot_i = x.dot(&coefficients.index_axis(Axis(0),i));
-            log_arg += dot_i.exp();
+            log_arg += dot_xi[i].exp();
         }
         // keep term corresponding to term_class (class of term passed as arg)
         let mut other_term = 0.;
         if term_class <  self.nbclass-1 {
-            other_term = x.dot(&coefficients.slice(s![term_class, ..]));
+            other_term = dot_xi[term_class];
         }
         let t_value = log_arg.ln() - other_term;
         t_value
@@ -80,22 +83,18 @@ impl SummationC1<Ix2> for LogisticRegression {
     fn term_gradient(&self, w: &Array2<f64>, term: &usize, gradient : &mut Array2<f64>) {
         // get observation corresponding to term
         let (ref x, term_class) = self.observations[*term];
-        // if log_enabled!(Trace) {
-        //     let norm = x.iter().fold(0., | acc, z  | acc + z.abs());
-        //     trace!("norm L1 observation {:2.4E}", norm);
-        // }
         //
+        let mut dot_xk = Array1::<f64>::zeros(self.nbclass-1);
         let mut den : f64 = 1.;
         for k in 0..self.nbclass-1 {
-            let dot_k = x.dot(&w.slice(s![k, ..]));
-            den += dot_k.exp();
+            dot_xk[k] = x.dot(&w.slice(s![k, ..])).exp();
+            den += dot_xk[k];
         }
         //
         for k in 0..self.nbclass-1 {
             let mut g_term : f64;
-            let dot_k : f64 = x.dot(&w.slice(s![k, ..]));
             for j in 0..x.len() {
-                g_term = x[j] * dot_k.exp()/den;
+                g_term = x[j] * dot_xk[k]/den;
                 // keep term corresponding to term_class (class of term passed as arg)
                if term_class == k {
                     g_term -= x[j];
@@ -103,10 +102,6 @@ impl SummationC1<Ix2> for LogisticRegression {
                 gradient[[k, j]] = g_term;
             }
         }
-        // if log_enabled!(Trace) {
-        //     let norm = gradient.iter().fold(0., | acc, x  | acc + x.abs());
-        //     trace!("norm L1 gradient {:2.4E}", norm);
-        // }
     }  // end of term_gradient
 }
 
