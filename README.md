@@ -36,7 +36,7 @@ and updating position by combining these global and local gradients.
 Further details on the algorithms are in the doc of files scsg.rs, svrg.rs, sag.rs
 (run **cargo doc --no-deps** as usual to get html generated docs) and in the reference papers.
 
-The implementation is based on the `ndarray` and `rayon` crates that provide respectiveley efficient
+The implementation is based on the `ndarray` and `rayon` crates that provide respectively efficient
 array manipulation and transparent threaded computations. All batch computation of size greater than 1000 terms
 are multithreaded.
 
@@ -51,7 +51,9 @@ The database has 60000 images of 784 pixels corresponding to
 handwritten digits form 0 to 9.  
 The logistic regression, with 10 classes,  is tested with the 3 algorithms and some comments are provided, comparing the results.
 Times are obtained by launching twice the example to avoid the compilation time of the first pass.
-Run times are those obtained on a 4 hyperthreaded i7-cores laptop at 2.7Ghz
+Run times are those obtained on a 4 hyperthreaded i7-cores laptop at 2.7Ghz.
+(If you want to run the examples just download and modify the path to mnist files according to your settings
+in the examples sources)
 
 ### SCSG logistic regression
 
