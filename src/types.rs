@@ -138,9 +138,8 @@ pub trait SummationC1<D:Dimension> : Summation<D> + FunctionC1<D> {
 
     /// in batched stochastic gradient we need means of gradient on batch or minibatch
     fn mean_partial_gradient(&self, position: &Array<f64, D>, terms: &[usize], gradient : &mut Array<f64, D>)  {
-        gradient.fill(0.);
         self.partial_gradient(position, terms, gradient);
-        gradient.iter_mut().for_each(|x| *x /= self.terms() as f64);
+        gradient.iter_mut().for_each(|x| *x /= terms.len() as f64);
     }  // end of mean_partial_gradient
 
 
