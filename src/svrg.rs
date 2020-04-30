@@ -118,7 +118,6 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SVRGDescent {
             // get iteration parameters
             let batch_gradient = function.gradient(&position);
             let position_before_mini_batch = position.clone();
-            let mut position_during_mini_batches = position.clone();
             // sample binomial law for number Nj of small batch iterations
             let n_j = self.get_nb_small_mini_batches(iteration);
             // loop on small batch iterations
@@ -126,8 +125,8 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SVRGDescent {
                 // sample mini batch terms
                 // 
                 let xsi : f64 = rand_distr::Standard.sample(&mut rng);
-                let term = (nb_terms as f64 * xsi.floor()) as usize;
-                function.partial_gradient(&position_during_mini_batches, &[term], &mut term_gradient_current);
+                let term = (nb_terms as f64 * xsi).floor() as usize;
+                function.partial_gradient(&position, &[term], &mut term_gradient_current);
                 //
                 function.partial_gradient(&position_before_mini_batch, &[term], &mut term_gradient_origin);
                 //
@@ -144,10 +143,9 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SVRGDescent {
                 //
                 direction = &term_gradient_current - &term_gradient_origin + &batch_gradient;
                 // step into the direction of the negative gradient
-                position_during_mini_batches = position_during_mini_batches - self.get_step_size_at_jstep(iteration) * &direction;
+                position = position - self.get_step_size_at_jstep(iteration) * &direction;
             } // end mini batch loop
             // update position
-            position = position_during_mini_batches.clone();
             iteration += 1;
 
             value = function.value(&position);

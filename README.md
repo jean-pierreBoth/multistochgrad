@@ -89,29 +89,25 @@ error at initial position: 2.3
 
 | nb iter |  nb mini batch     | step    | y value  | time(s) |
 |  ---    |     :---:          | ------  |   ----   |  ----  |
-|  50     |     500            |  0.0015 |  0.46    |  20    |
-|  50     |     1000           |  0.0015 |  0.39    |  21    |
-|  50     |     2000           |  0.0015 |  0.39    |  24    |
-|  50     |     1000           |  0.004  |  0.38    |  21    |
-|  100     |    1000           |  0.004  |  0.33    |  42    |
+|  50     |     500            |  0.02   |  0.30    |  17    |
+|  50     |     500            |  0.05   |  0.27    |  17    |
+|  50     |     1000           |  0.05   |  0.26    |  18    |  
+|  50     |     2000           |  0.05   |  0.25    |  21    |  
+|  100     |    1000           |  0.05   |  0.246   |  35    |  
 
-We see between the first and the second line that running mini batch of size one randomly selected
-comes for free in cpu time, so we can run many mini-batch and get a better precision. For these 2 first lines the convergence was quasi monotonous.
-The third line shows that with too many mini batch we do not gain any more. In fact
-monitoring the convergence shows that we begin to observe instability due to the length of mini batches: in fact we had y = 0.41 at iteration 33.
-Lines 4 and 5  shows correct results but the step is a bit large and in fact converge was .
+We check from the lines 2,3 and 4 that running mini batch of size one randomly selected
+comes for free in cpu time, so we can run many mini-batch and get a better precision.
 
 * initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
 | nb iter |  nb mini batch     | step    | y value   | time(s)  |
 |  ---    |     :---:          | ------  |   :---:   |  :----:  |
-|  100    |     1000           |  0.0015 |  0.53     |   39     |  
-|  100    |     1000           |  0.002  |  0.46     |   39     |
-|  50     |     1000           |  0.004  |  0.55     |   26     |
-|  100    |     1000           |  0.004  |  0.88     |   52     |
+|  100    |     1000           |  0.02   |  0.27     |   35     |  
+|  50     |     1000           |  0.05   |  0.26     |   18     |
+|  100    |     1000           |  0.05   |  0.245    |   35     |
 
-The too last lines  show that the step is too large
+
 
 ### SAG logisitc regression
 

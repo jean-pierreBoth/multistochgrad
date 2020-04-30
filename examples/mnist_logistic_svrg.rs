@@ -82,7 +82,7 @@ fn main () {
     // 
     let nb_iter = 100;
     let svrg_pb = SVRGDescent::new(1000,       // mini batch size
-                0.002,                       // batch step
+                0.02,                         // batch step
             );
     // allocate and set to 0 an array with 9 rows(each row corresponds to a class, columns are pixels values)
     let mut initial_position = Array2::<f64>::zeros((9, 1+nb_row*nb_column));
