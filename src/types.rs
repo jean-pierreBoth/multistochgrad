@@ -1,5 +1,4 @@
-// Copyright (c) 2016 Oliver Mader <b52@reaktor42.de>
-//
+
 //! This file is inspired by the crate optimisation written by  Oliver Mader b52@reaktor42.de
 //! I kept the traits Function, FunctionC1, Summation and SummationC1 which provides
 //! the interface accessible to users defining a minimisation problem.

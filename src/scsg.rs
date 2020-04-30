@@ -5,6 +5,8 @@
 use log::Level::*;
 use log::{debug, info, warn, trace, log_enabled};
 
+use std::iter::FromIterator;
+
 use rand::{SeedableRng};
 use rand::distributions::{Distribution};
 // a fast but non crypto secure algo. method jump to use in // !!!!
@@ -60,7 +62,7 @@ pub struct  BatchSizeInfo {
 ///       Bⱼ evolves as :   large_batch_size_init * nbterms * alfa^(2j)
 ///       mⱼ evolves as :   m_zero * nbterms * alfa^(3j/2)
 ///       bⱼ evolves as :   b_0 * alfa^j
-///       ηⱼ evolves as :   eta_0 / alfa^j
+///       ηⱼ evolves as :   eta_0 / alfa^(j/2)
 ///     
 ///     where alfa is computed to be slightly greater than 1.  
 ///     In fact α is chosen so that :  B_0 * alfa^(2*nbiter) = 1.
@@ -118,7 +120,7 @@ impl  StochasticControlledGradientDescent {
 
     // batch growing factor cannot be too large, so it must be adjusted accoding to nbterms value, and nb_max_iterations
     // we choose the batch growing factor alfa so that :
-    //     B_0 * alfa^(2*nb_max_iterations) < 1.
+    //     B_0 * alfa^(2*nb_max_iterations) = 1.
     // (B_0 is the fraction of nbterms we take at beginning of iterations)
     fn estimate_batch_growing_factor(&self, nb_max_iterations : usize , nbterms:usize) -> f64 {
         let batch_growing_factor : f64;
@@ -159,7 +161,8 @@ impl  StochasticControlledGradientDescent {
         let mini_batch_size = ((self.mini_batch_size_init as f64 * alfa_j).floor() as usize).min(max_mini_batch_size);
         // m_j  computed to ensure mean number of mini batch < large_batch_size as mini_batch_size_init < large_batch_size_init is enfored
         let nb_mini_batch_parameter = self.m_zero * (nbterms as f64) * alfa_j.powf(1.5);
-        let step_size = self.eta_zero / alfa_j;
+        // let step decrease really slowly
+        let step_size = self.eta_zero / alfa_j.sqrt();
         //
         BatchSizeInfo {
             _step : j,
@@ -175,12 +178,11 @@ impl  StochasticControlledGradientDescent {
     fn get_nb_small_mini_batches(&self, batch_size_info : &BatchSizeInfo) -> usize {
         let m_j =  batch_size_info.nb_mini_batch_parameter as f64;
         let b_j = batch_size_info.mini_batch as f64;
-        let p : f64 = m_j/(m_j+b_j);
-        trace!(" geometric law parameter {:2.4E}", p);
+//        trace!(" geometric law parameter {:2.4E}", p);
         // we return mean of geometric. Sampling too much instable due to large variance of geometric distribution.
-        let mut n_j = (p / (1.-p)).ceil() as usize;
+        let mut n_j = (m_j/b_j).ceil() as usize;
         n_j = n_j.min(batch_size_info.large_batch);
-        trace!(" nb small mini batch {:?} m_j {:2.4E} b_j : {:2.4E} ", n_j,  m_j, b_j);
+//        trace!(" nb small mini batch {:?} m_j {:2.4E} b_j : {:2.4E} ", n_j,  m_j, b_j);
         return n_j;
     }
     
@@ -190,44 +192,32 @@ impl  StochasticControlledGradientDescent {
 #[allow(dead_code)]
 // if size_asked > size_in all terms are accepted, we get a full gradient!
 fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
-        let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
-        // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
-        // https://bastian.rieck.me/blog/posts/2017/selection_sampling/
-        let mut t : usize = 0;
-        let mut xsi : f64;
-        
-        while t < size_asked {
-            xsi = rand_distr::Standard.sample(rng);
-            if xsi * ((in_terms.len() - t) as f64) < (size_asked - out_terms.len()) as f64 {
-                out_terms.push(in_terms[t]);
-            }
+    let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
+    // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
+    // https://bastian.rieck.me/blog/posts/2017/selection_sampling/
+    let mut t : usize = 0;
+    let mut xsi : f64;
+    
+    while t < in_terms.len() {
+        xsi = rand_distr::Standard.sample(rng);
+
+        if xsi * ((in_terms.len() - t) as f64) < (size_asked - out_terms.len()) as f64 {
+            out_terms.push(in_terms[t]);
+        }
+        if out_terms.len() == size_asked {
+            break;
+        }
+        else {
             t+=1;
         }
-        //
-        assert_eq!(size_asked, out_terms.len());
-        //
-        out_terms
+    }
+    //
+    assert_eq!(size_asked, out_terms.len());
+    //
+    out_terms
 }  // end of sample_without_replacement_from_slice
 
 
-
-
-
-// this function requires that size_in be equal to in_temrs.count() !!!!
-// but it can be useful as it enables call with a range and thus avoid passing reference to large slice!
-// if size_asked > size_in all terms are accepted, we get a full gradient!
-fn sample_without_replacement_iter(size_asked: usize, in_terms: impl IntoIterator<Item=usize>, size_in : usize, rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
-    let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(size_in));
-    let mut xsi : f64;
-    for t in  in_terms.into_iter() {
-        xsi = rand_distr::Standard.sample(rng);
-        if (xsi * ((size_in - t) as f64)) < (size_asked-out_terms.len()) as f64 {
-            out_terms.push(t);
-        }
-    }  
-    assert_eq!(size_asked, out_terms.len());
-    out_terms 
-}  // end of sample_without_replacement
 
 
 
@@ -265,25 +255,25 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
         let mut  mini_batch_gradient_origin : Array<f64, D>;
         mini_batch_gradient_origin = position.clone();
         mini_batch_gradient_origin.fill(0.); 
+        //
+        let all_indexes = Vec::<usize>::from_iter::<std::ops::Range<usize>>(0..nb_terms);
         // now we work      
         loop {
             // get iteration parameters
             let iter_params = self.get_batch_size_at_jstep(batch_growing_factor, nb_terms, iteration);
+            let n_j = self.get_nb_small_mini_batches(&iter_params);
             let step_size = iter_params.step_size;
             // sample large batch of size Bj
-            let large_batch_indexes = sample_without_replacement_iter(iter_params.large_batch, 0..nb_terms, nb_terms, & mut rng);
-            trace!("\n iter {:?} got large batch size {:?}, mini batch param {:2.4E}, mini batch size {:?}, step {:2.4E}", 
-                    iteration, large_batch_indexes.len(), iter_params.nb_mini_batch_parameter, 
-                    iter_params.mini_batch, iter_params.step_size);
+            let large_batch_indexes = sample_without_replacement_from_slice(iter_params.large_batch, &all_indexes, & mut rng);
+            trace!("\n iter {:?} got large batch size {:?}, nb mini batch {:?}, mini batch size {:?}, step {:2.4E}", 
+                    iteration, large_batch_indexes.len(), n_j, iter_params.mini_batch, iter_params.step_size);
             // compute gradient on large batch index set and store initial position
             function.mean_partial_gradient(&position, &large_batch_indexes, &mut large_batch_gradient);
             let position_before_mini_batch = position.clone();
-            // sample binomial law for number Nj of small batch iterations
-            let n_j = self.get_nb_small_mini_batches(&iter_params);
             // loop on small batch iterations
             for _k in 0..n_j {
                 // sample mini batch terms
-                let terms = sample_without_replacement_iter(iter_params.mini_batch, 0..nb_terms, nb_terms, &mut rng);
+                let terms = sample_without_replacement_from_slice(iter_params.mini_batch, &all_indexes, &mut rng);
                 //
                 function.mean_partial_gradient(&position, &terms, &mut mini_batch_gradient_current);
                 //
