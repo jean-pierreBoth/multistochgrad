@@ -178,7 +178,6 @@ impl  StochasticControlledGradientDescent {
     fn get_nb_small_mini_batches(&self, batch_size_info : &BatchSizeInfo) -> usize {
         let m_j =  batch_size_info.nb_mini_batch_parameter as f64;
         let b_j = batch_size_info.mini_batch as f64;
-//        trace!(" geometric law parameter {:2.4E}", p);
         // we return mean of geometric. Sampling too much instable due to large variance of geometric distribution.
         let mut n_j = (m_j/b_j).ceil() as usize;
         n_j = n_j.min(batch_size_info.large_batch);
@@ -189,12 +188,12 @@ impl  StochasticControlledGradientDescent {
 } // end impl StochasticControlledGradientDescent
 
 
-#[allow(dead_code)]
 // if size_asked > size_in all terms are accepted, we get a full gradient!
 fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
-    let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
     // sample terms. Cf Knuth The Art of Computer Programming, Volume 2, Section 3.4.2 
     // https://bastian.rieck.me/blog/posts/2017/selection_sampling/
+    //
+    let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
     let mut t : usize = 0;
     let mut xsi : f64;
     

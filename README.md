@@ -82,7 +82,21 @@ error at initial position: 2.3
 | 100     | 0.02   |  0.002   |  0.1    |  0.271   |  13.2  |
 |  50     | 0.02   |  0.002   |  0.1    |  0.287   |  6.8   |
 
+It seems that convergence from the iniatialization from a null image is slightly easier than
+with a contant 0.5 pixel.
+
 ### SVRG logistic regression
+
+* initialization position : 9 images with *constant pixel = 0.5*,
+error at initial position: 6.94
+
+| nb iter |  nb mini batch     | step    | y value   | time(s)  |
+|  ---    |     :---:          | ------  |   :---:   |  :----:  |
+|  100    |     1000           |  0.02   |  0.27     |   35     |  
+|  25     |     1000           |  0.05   |  0.288    |   9     |
+|  50     |     1000           |  0.05   |  0.26     |   18     |
+|  100    |     1000           |  0.05   |  0.25     |   36     |
+
 
 * initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
@@ -97,16 +111,6 @@ error at initial position: 2.3
 
 We check from the lines 2,3 and 4 that running mini batch of size one randomly selected
 comes for free in cpu time, so we can run many mini-batch and get a better precision.
-
-* initialization position : 9 images with *constant pixel = 0.5*,
-error at initial position: 6.94
-
-| nb iter |  nb mini batch     | step    | y value   | time(s)  |
-|  ---    |     :---:          | ------  |   :---:   |  :----:  |
-|  100    |     1000           |  0.02   |  0.27     |   35     |  
-|  50     |     1000           |  0.05   |  0.26     |   18     |
-|  100    |     1000           |  0.05   |  0.245    |   35     |
-
 
 ### SAG logisitc regression
 
@@ -123,8 +127,11 @@ error at initial position: 6.94
 
 ### Results
 
-Tests show that the SCSG outperforms SVRG and SAG by a factor 2 at equivalent precision in
-both case with a correct initialization and one far from the solution although there are more parameters to fit.
+Tests show that the SCSG and SVRG outperforms SAG by a factor 2 at equivalent precision in
+both case with a correct initialization and one far from the solution.
+SCSG is very fast at reaching a good approximation roughly 0.28 even though it never runs on
+the whole (one tenth)  in this implementation.  
+It is more difficult to reach lower value around 0.26.
 
 ## Acknowledgement
 
