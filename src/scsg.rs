@@ -217,7 +217,33 @@ fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], 
 }  // end of sample_without_replacement_from_slice
 
 
+// used to smaple mini batches, should be faster.
+#[allow(dead_code)]
+fn sample_without_replacement_reservoir(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
+    let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
+    for i in 0..size_asked {
+        out_terms.push(in_terms[i]);
+    }
+    let mut xsi : f64;
+    xsi = rand_distr::Standard.sample(rng);
+    let mut w : f64 = (xsi.ln()/(size_asked as f64+1.)).exp();
 
+    let mut s = size_asked;
+    while s < in_terms.len() {
+        xsi = rand_distr::Standard.sample(rng);
+        s = s + (xsi.ln()/ (1. - w).ln()).floor() as usize + 1;
+        if s <  in_terms.len() {
+            // update random index in out_terms
+            xsi = rand_distr::Standard.sample(rng);
+            let idx = (size_asked as f64  * xsi).floor() as usize;
+            out_terms[idx] = in_terms[s];
+            // update w
+            xsi = rand_distr::Standard.sample(rng);
+            w = w * (xsi.ln()/(size_asked as f64 + 1.)).exp();
+        }
+    }
+    out_terms
+}
 
 
 impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticControlledGradientDescent {
@@ -272,7 +298,7 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
             // loop on small batch iterations
             for _k in 0..n_j {
                 // sample mini batch terms
-                let terms = sample_without_replacement_from_slice(iter_params.mini_batch, &all_indexes, &mut rng);
+                let terms = sample_without_replacement_reservoir(iter_params.mini_batch, &all_indexes, &mut rng);
                 //
                 function.mean_partial_gradient(&position, &terms, &mut mini_batch_gradient_current);
                 //
@@ -316,3 +342,27 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  StochasticContr
 }  // end impl impl<F: Summation1> Minimizer<F>
 
 
+//==================================================================================
+
+#[cfg(test)]
+mod tests {
+
+//    use std::iter::FromIterator;
+    use super::*;
+
+#[test]
+fn test_reservoir_sampling() {
+    let mut rng  = Xoshiro256PlusPlus::seed_from_u64(4664397);
+    let nb_asked = 100;
+    let in_terms = Vec::<usize>::from_iter::<std::ops::Range<usize>>(0..60000);
+    let selected_terms = sample_without_replacement_reservoir(nb_asked, &in_terms, &mut rng);
+    // 
+    assert_eq!(selected_terms.len(), nb_asked);
+    // sort and print
+}
+
+
+
+
+
+} // end of mod tests
