@@ -218,8 +218,9 @@ fn sample_without_replacement_from_slice(size_asked: usize, in_terms: &[usize], 
 
 
 // used to sample mini batches, Really faster.
-// reservoir sampling. Faster methods for Random Sampling J.S Vitter Comm ACM 1984
-// and https://en.wikipedia.org/wiki/Reservoir_sampling
+//  1. Faster methods for Random Sampling J.S Vitter Comm ACM 1984
+// 2. Kim-Hung Li Reservoir Sampling Algorithms : Comm ACM Vol 20, 4 December 1994
+//  3. https://en.wikipedia.org/wiki/Reservoir_sampling
 
 fn sample_without_replacement_reservoir(size_asked: usize, in_terms: &[usize], rng : &mut Xoshiro256PlusPlus) -> Vec<usize> {
     let mut out_terms = Vec::<usize>::with_capacity(size_asked.min(in_terms.len()));
