@@ -78,13 +78,15 @@ error at initial position: 2.3
 
 | nb iter | B_0    |   m_0    | step_0  | y value  | time(s)|
 |  ---    |----    |  ----    | ------  |   ----   |  ----  |
-|  50     | 0.015  |  0.006   |  0.1    |  0.27    |  14    |
-|  50     | 0.015  |  0.004   |  0.1    |  0.274   |  10    |
-| 100     | 0.02   |  0.002   |  0.1    |  0.271   |  13.2  |
-|  50     | 0.02   |  0.002   |  0.1    |  0.287   |  6.8   |
+|  50     | 0.015  |  0.006   |  0.1    |  0.27    |  8.5   |
+|  50     | 0.015  |  0.004   |  0.1    |  0.274   |  6.8   |
+|  50     | 0.02   |  0.004   |  0.1    |  0.275   |  6.4   |
+|  50     | 0.02   |  0.006   |  0.1    |  0.268   |  8.0   |
+|  100    | 0.02   |  0.006   |  0.1    |  0.258   |  15.5  |
 
-It seems that convergence from the iniatialization from a null image is slightly easier than
-with a contant 0.5 pixel.
+
+It seems that convergence from the initialization from a null image is slightly easier than
+with a constant 0.5 pixel.
 
 ### SVRG logistic regression
 
@@ -128,11 +130,11 @@ error at initial position: 6.94
 
 ### Results
 
-Tests show that the SCSG and SVRG outperforms SAG by a factor 2 at equivalent precision in
+Tests show that the SCSG  outperforms SVRG by a factor 1.5 or 2  at equivalent precision in
 both case with a correct initialization and one far from the solution.
+SVRG clearly outperforms SAG.
 SCSG is very fast at reaching a good approximation roughly 0.28 even though it never runs on
-the whole (one tenth)  in this implementation.  
-It is more difficult to reach lower value around 0.26.
+the whole (one tenth) in this implementation.  
 
 ## Acknowledgement
 
