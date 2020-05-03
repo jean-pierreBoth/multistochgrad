@@ -229,9 +229,9 @@ fn sample_without_replacement_reservoir(size_asked: usize, in_terms: &[usize], r
     }
     let mut xsi : f64;
     xsi = rand_distr::Standard.sample(rng);
-    let mut w : f64 = (xsi.ln()/(size_asked as f64+1.)).exp();
+    let mut w : f64 = (xsi.ln()/(size_asked as f64)).exp();
 
-    let mut s = size_asked;
+    let mut s = size_asked-1;
     while s < in_terms.len() {
         xsi = rand_distr::Standard.sample(rng);
         s = s + (xsi.ln()/ (1. - w).ln()).floor() as usize + 1;
@@ -242,7 +242,7 @@ fn sample_without_replacement_reservoir(size_asked: usize, in_terms: &[usize], r
             out_terms[idx] = in_terms[s];
             // update w
             xsi = rand_distr::Standard.sample(rng);
-            w = w * (xsi.ln()/(size_asked as f64 + 1.)).exp();
+            w = w * (xsi.ln()/(size_asked as f64)).exp();
         }
     }
     out_terms
