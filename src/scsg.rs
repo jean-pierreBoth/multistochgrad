@@ -59,12 +59,12 @@ pub struct  BatchSizeInfo {
 /// 
 /// If nbterms is the number of terms in function to minimize and j the iteration number:
 /// 
-///       Bⱼ evolves as :   large_batch_size_init * nbterms * alfa^(2j)
-///       mⱼ evolves as :   m_zero * nbterms * alfa^(3j/2)
-///       bⱼ evolves as :   b_0 * alfa^j
-///       ηⱼ evolves as :   eta_0 / alfa^(j/2)
+///  -    Bⱼ evolves as :    large_batch_size_init * nbterms * alfa^(2j)
+///  -    mⱼ evolves as :   m_zero * nbterms * alfa^(3j/2)
+///  -    bⱼ evolves as :   b_0 * alfa^j
+///  -    ηⱼ evolves as :   eta_0 / alfa^(j/2)
 ///     
-///     where alfa is computed to be slightly greater than 1.  
+///  where alfa is computed to be slightly greater than 1.  
 ///     In fact α is chosen so that :  B_0 * alfa^(2*nbiter) = 1.
 /// 
 ///  The evolution of Bⱼ is bounded above by nbterms/10 and bⱼ by nbterms/100.  
