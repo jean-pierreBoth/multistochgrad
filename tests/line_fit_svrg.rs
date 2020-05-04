@@ -55,7 +55,7 @@ fn test_line_regression() {
     let sse = SSE {
         observations: noisy_observations
     };
-    // eta_0, m_0  factor , b_0  , B_0 factor 
+    // 
     let svrg_pb = SVRGDescent::new(50,   // nb mini batch
                                     0.1 ,   // step size
                                     );
@@ -68,5 +68,5 @@ fn test_line_regression() {
     for i in 0..solution.position.len() {
         println!("{:2.4E} ", solution.position[i]);
     }
-    assert!(solution.value < 0.55);
+    assert!(solution.value < 0.6);
 }

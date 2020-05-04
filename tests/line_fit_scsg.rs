@@ -68,6 +68,6 @@ fn test_line_regression() {
     for i in 0..solution.position.len() {
         println!("{:2.4E} ", solution.position[i]);
     }
-    assert!(solution.value < 0.55);
+    assert!(solution.value < 0.6);
 }
 
