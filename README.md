@@ -1,7 +1,5 @@
 # Multistochgrad
 
-**WARNING : This is a preliminary version of a crate not yet "published" in Rust crate repository**.
-
 This crate provides a Rust implementation of some stochastic gradient algorithms.
 
 The algorithms implemented here are dedicated to the minimization of (convex) objective function represented by the
@@ -15,7 +13,7 @@ The implemented algorithms are:
     [SCSG-1](https://arxiv.org/abs/1904.04480)
 
     * "Less than a single pass : stochastically controlled stochastic gradient" (2019)
-    [SCSD-2](https://arxiv.org/abs/1609.03261)
+    [SCSG-2](https://arxiv.org/abs/1609.03261)
 
 2. The SVRG algorithm described in the paper by R. Johnson and T. Zhang
 "Accelerating Stochastic Gradient Descent using Predictive Variance Reduction" (2013).  
@@ -155,4 +153,4 @@ Licensed under either of
 
 at your option.
 
-This software was written on my own while working at [CEA](http://www.cea.fr/), [CEA-LIST](http://www-list.cea.fr/en/)
+This software was written on my own while working at [CEA](http://www.cea.fr/)

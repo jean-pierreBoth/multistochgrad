@@ -54,8 +54,6 @@ path = "examples/mnist_logistic_sag.rs"
 optimization = {version = "0.1.0", doc = false}
 
 # infrastructure
-serde= {version = "1.0", doc = false}
-serde_derive={ version = "1.0", doc = false}
 # for asynchronous stuff
 tokio = { version = "0.2", features = ["full"] }
 futures = {version= "0.3", doc = false}
@@ -69,7 +67,6 @@ parking_lot = "0.6"
 rayon = {version = "1.3",  doc = false}
 
 num_cpus = {version = "1.8.0", doc = false}
-simdeez = {version = "0.6", doc = false}
 
 cpu-time = {version = "0.1", doc = false}
 time = {version = "0.1.39",  doc = false}
@@ -86,7 +83,7 @@ rand_xoshiro = {version = "0.4", doc = false}
 lazy_static = { version = "1.3", doc = false}
 # decreasing order of log for debug build : (max_level_)trace debug info warn error off
 # decreasing order of log for release build (release_max_level_)  .. idem
-log = { version = "0.4", features = ["max_level_trace", "release_max_level_trace"] }
+log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
 env_logger = { version = "0.7"}
 
 
