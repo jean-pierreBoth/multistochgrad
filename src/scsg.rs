@@ -1,5 +1,5 @@
-//! A Rust implementation of Lei-Jordan paper 
-//! On the adaptativity of Stochastic gradient based optiimization
+//! A Rust implementation of Lei-Jordan paper:     
+//! "On the adaptativity of Stochastic gradient based optimization" (2019)  
 //! https://arxiv.org/abs/1904.04480
 
 use log::Level::*;
@@ -32,8 +32,10 @@ pub struct  BatchSizeInfo {
     step_size : f64,
 }
 
-/// Provides Stochastic Controlled Gradient Descent optimization
-/// Lei-Jordan On the adaptativity of stochastic gradient based optimisation 2019
+/// Provides Stochastic Controlled Gradient Descent optimization based on papers of Lei-Jordan :  
+/// - "On the adaptativity of stochastic gradient based optimisation" 2019  
+/// and 
+/// - "Less than a single pass : stochastically controlled stochastic gradient"
 /// 
 /// According to the first paper we have the following notations:
 ///  
@@ -86,10 +88,12 @@ pub struct StochasticControlledGradientDescent {
 impl  StochasticControlledGradientDescent {
     /// args are :
     ///   - initial value of step along gradient value of 0.5 is a good default choice.
-    ///   - m_zero : a good value is 0.1*large_batch_size_init so that  mⱼ << Bⱼ
+    ///   - m_zero : a good value is 0.2 *large_batch_size_init so that  mⱼ << Bⱼ
     ///   - base value for size of mini_batchs : a value of 1 is a good default choice
     ///   - fraction of nbterms to initialize large batch size : a good default value is between 0.01 and 
-    ///             0.015 large batch size begins at 0.01 * nbterms
+    ///             0.02 large batch size begins at 0.01 * nbterms or 0.02 * nbterms.
+    /// 
+    /// (see examples)
     ///
     pub fn new(eta_zero : f64, m_zero: f64, mini_batch_size_init : usize, large_batch_size_init: f64) -> StochasticControlledGradientDescent {
         //

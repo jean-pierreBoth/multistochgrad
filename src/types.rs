@@ -1,10 +1,10 @@
 
-//! This file is inspired by the crate optimisation written by  Oliver Mader b52@reaktor42.de
+//! This file is inspired by the crate optimisation written by  Oliver Mader b52@reaktor42.de.  
 //! I kept the traits Function, FunctionC1, Summation and SummationC1 which provides
-//! the interface accessible to users defining a minimisation problem.
+//! the interface for users to define a minimisation problem.
 //! 
 //! 
-//! In fact when minimising summation function we often seek to minimize the mean of the summation
+//! In fact when minimising summation function we often seek to minimize the mean of the terms
 //! which is the same but scales gradient and this makes the implementation of batched stochastic gradient
 //! more natural as we always computes mean gradient over terms taken into account.
 //! 

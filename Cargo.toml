@@ -1,11 +1,11 @@
 [package]
 name = "multistochgrad"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["jeanpierre.both@gmail.com"]
 description = "Stochastic Gradient, Multithreaded"
 license = "MIT/Apache-2.0"
 readme = "README.md"
-keywords = ["algorithms", "optimization"]
+keywords = ["algorithms", "optimization", "stochastic gradient"]
 repository = "https://github.com/jean-pierreBoth/multistochgrad"
 edition= "2018"
 
@@ -50,7 +50,6 @@ path = "examples/mnist_logistic_sag.rs"
 #
 
 # numerics
-optimization = {version = "0.1.0", doc = false}
 
 # infrastructure
 # for asynchronous stuff

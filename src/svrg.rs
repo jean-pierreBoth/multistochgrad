@@ -1,5 +1,5 @@
-//! A Rust implementation of Johnsohn-Zhang paper 
-//! Acceleration stochastic Gradient Descent using Predictive Variance Reduction
+//! A Rust implementation of Johnson-Zhang paper:   
+//!     "Acceleration stochastic Gradient Descent using Predictive Variance Reduction"  
 //! https://papers.nips.cc/paper/4937-accelerating-stochastic-gradient-descent-using-predictive-variance-reduction.pdf
 
 

@@ -1,5 +1,8 @@
-//! This file provides multiclass logistic regression
-//! It is used in examples with MNIST data
+//! This file provides multiclass logistic regression.  
+//! 
+//! It is used in examples with MNIST data.  
+//! It implements traits defined in types.rs with 2 dimensional arrays, which is
+//! more natural to solve a multiclass problem.
 //! 
 
 extern crate rand;
