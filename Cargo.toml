@@ -1,13 +1,12 @@
 [package]
 name = "multistochgrad"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["jeanpierre.both@gmail.com"]
-description = "Stochastic Gradient, Multithreaded, // based in nng"
+description = "Stochastic Gradient, Multithreaded"
 license = "MIT/Apache-2.0"
 readme = "README.md"
 keywords = ["algorithms", "optimization"]
-homepage = "https://gitlab.com/jpboth/multistochgrad"
-repository = "https://gitlab.com/jpboth/multistochgrad.git"
+repository = "https://github.com/jean-pierreBoth/multistochgrad"
 edition= "2018"
 
 [features]
