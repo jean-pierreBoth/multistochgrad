@@ -6,9 +6,9 @@ use ndarray::{Array3, Array1, s};
 use std::fs::{OpenOptions};
 use std::path::{PathBuf};
 
-/// A struct to load/store http://yann.lecun.com/exdb/mnist/
-/// train-labels-idx1-ubyte  digits between 0 and 9  
-/// and hand written characters as 28*28 images with values between 0 and 255  train-images-idx3-ubyte
+/// A struct to load/store [MNIST data](http://yann.lecun.com/exdb/mnist/)  
+/// stores labels (i.e : digits between 0 and 9) coming from file train-labels-idx1-ubyte      
+/// and hand written characters as 28*28 images with values between 0 and 255 coming from train-images-idx3-ubyte
 pub struct MnistData {
     _image_filename : String,
     _label_filename : String,

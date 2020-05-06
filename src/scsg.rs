@@ -1,6 +1,6 @@
 //! A Rust implementation of Lei-Jordan paper:     
 //! "On the adaptativity of Stochastic gradient based optimization" (2019)  
-//! https://arxiv.org/abs/1904.04480
+//! [SCSG-1](https://arxiv.org/abs/1904.04480)
 
 use log::Level::*;
 use log::{debug, info, warn, trace, log_enabled};

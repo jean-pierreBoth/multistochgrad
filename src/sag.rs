@@ -4,9 +4,13 @@
 //! "Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)
 //! M.Schmidt, N.LeRoux, F.Bach
 //! 
-//!  
+//!   f(x) = 1/n ∑ fᵢ(x) , with fᵢ such that there exist a constant L with ∇fᵢ is L lipschitz
 //!
 
+// Note:
+//  estimation of Lipschitz constant as documented by mean of L on each block was too expensive
+//  and very high. It would impose a lower step than those observed giving convergence.
+//
 
 #[allow(unused_imports)]
 use log::Level::*;
@@ -34,14 +38,12 @@ use crate::monitor::*;
 /// The algorithm never computes a full gradient. It initialize the direction of propagation
 /// as a null vector. 
 /// The terms of the sum as grouped in blocks. At each iteration
-/// the gradient of randomly selected block is computed at the current position added
-/// to the current total gradient from which the gradient of the selected block at
-/// the last iteration it was selected. So the current estimate of the gradient 
-/// is made of blocks contributions that are more or less oudated.
+/// the gradient of randomly selected block is computed at the current position, and
+/// replace the gradient of this same block obtained at the last iteration it was selected. 
+/// So the current estimate of the total gradient is made of blocks contributions that are more or less outdated.
 /// 
-/// It must be noted that a gradients of each block are stored and updated for future use when
-/// the block is reused.
-/// The larger the block size, the lesser the number of blocks but more work is done at each iteration.
+/// It must be noted that gradients of each block are stored and updated for future use when
+/// the block is reused. So the larger the block size, the lesser the number of blocks but more work is done at each iteration.
 /// 
 /// 
 /// Precisely we have the following sequence:  
@@ -51,7 +53,7 @@ use crate::monitor::*;
 ///                     - gradient of the same block last time it was computed.
 /// - update of position
 /// 
-/// The step size is constant (and could automatically adjusted to Lipschitz constant in a later work)
+/// The step size is constant.
 /// 
 pub struct SagDescent {
     //
@@ -157,8 +159,6 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
             // trace!(" term_gradient_current {:2.4E} ", &crate::types::norm_l2(&term_gradient_current));
             let block_content = &(block_start(block) .. block_end(block)).into_iter().collect::<Vec<usize>>();
             function.partial_gradient(&position, block_content, &mut term_gradient_current);
-    //        trace!(" term {:?} gradient {:2.6E}  nb_term {:?} ", term, &term_gradient_current, nb_terms_seen);
-    //        trace!(" term {:?} gradient substracted  {:2.6E} ", term, gradient_list[term].as_ref());
             direction = direction - (gradient_list[block].as_ref() - &term_gradient_current) / (nb_terms as f64);
             gradient_list[block] = Box::new(term_gradient_current.clone());
             // update position
