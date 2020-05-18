@@ -1,6 +1,6 @@
-//! A Rust implementation of Lei-Jordan paper:     
-//! "On the adaptativity of Stochastic gradient based optimization" (2019)  
-//! [SCSG-1](https://arxiv.org/abs/1904.04480)
+//! A Rust implementation of Lei-Jordan papers:     
+//! ``"On the adaptativity of Stochastic gradient based optimization"`` (2019)  [SCSG-1](https://arxiv.org/abs/1904.04480)  
+//! ``"Less than a single pass : stochastically controlled stochastic gradient"`` (2019) [SCSG-2](https://arxiv.org/abs/1609.03261)
 
 use log::Level::*;
 use log::{debug, info, warn, trace, log_enabled};
@@ -32,11 +32,11 @@ pub struct  BatchSizeInfo {
     step_size : f64,
 }
 
-/// Provides Stochastic Controlled Gradient Descent optimization based on papers of Lei-Jordan :  
-/// - "On the adaptativity of stochastic gradient based optimisation" 2019  
-/// and 
-/// - "Less than a single pass : stochastically controlled stochastic gradient"
-/// 
+///
+/// Provides Stochastic Controlled Gradient Descent optimization based on 2 papers of Lei-Jordan.  
+/// - ``"On the adaptativity of stochastic gradient based optimisation"`` arxiv 2019  [SCSG-1](https://arxiv.org/abs/1904.04480)
+/// - ``"Less than a single pass : stochastically controlled stochastic gradient"`` arxiv 2019 [SCSG-2](https://arxiv.org/abs/1609.03261)
+///
 /// According to the first paper we have the following notations:
 ///  
 /// One iteration j consists in :

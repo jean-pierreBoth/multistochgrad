@@ -82,7 +82,6 @@ error at initial position: 2.3
 |  50     | 0.02   |  0.006   |  0.1    |  0.268   |  8.0   |
 |  100    | 0.02   |  0.006   |  0.1    |  0.258   |  15.5  |
 
-
 It seems that convergence from the initialization from a null image is slightly easier than
 with a constant 0.5 pixel.
 
@@ -97,7 +96,6 @@ error at initial position: 6.94
 |  25     |     1000           |  0.05   |  0.288    |   9      |
 |  50     |     1000           |  0.05   |  0.26     |   18     |
 |  100    |     1000           |  0.05   |  0.25     |   36     |
-
 
 * initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
