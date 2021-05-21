@@ -61,13 +61,13 @@ fn test_line_regression() {
                             0.95);
     //
     let initial_position = Array1::<f64>::from( vec![1.0; true_coefficients_arr.len()]);
-    let nb_iter = 100;
+    let nb_iter = 150;
     let solution = scgd_pb.minimize(&sse, &initial_position, Some(nb_iter));
 
     println!(" solution with a SSE = {:2.4E}", solution.value);
     for i in 0..solution.position.len() {
         println!("{:2.4E} ", solution.position[i]);
     }
-    assert!(solution.value < 0.6);
+    assert!(solution.value < 0.7);
 }
 
