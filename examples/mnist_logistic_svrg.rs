@@ -9,10 +9,7 @@
 //! With initial_positions set to [0. ....   0.] the convegence is monotonous
 //! but it is more than 2 times slower than scsg
 
-extern crate env_logger;
-extern crate rand;
-extern crate rand_distr;
-extern crate multistochgrad;
+
 
 use std::path::{PathBuf};
 use std::fs::{OpenOptions};

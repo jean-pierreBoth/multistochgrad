@@ -1,11 +1,8 @@
-extern crate rand;
 
 // for logging (debug mostly, switched at compile time in cargo.toml)
 
 
-extern crate log;
 
-extern crate env_logger;
 
 #[macro_use]
 extern crate lazy_static;

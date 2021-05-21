@@ -6,10 +6,7 @@
 /// or with RUST_LOG=debug|info cargo run --example mnist_logistic_scsg
 /// 
 
-extern crate env_logger;
-extern crate rand;
-extern crate rand_distr;
-extern crate multistochgrad;
+
 
 use std::path::{PathBuf};
 use std::fs::{OpenOptions};

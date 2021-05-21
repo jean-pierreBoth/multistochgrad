@@ -11,10 +11,7 @@
 //!  With 2000 iterations , batch_size = 1000, step_size = 0.1 it takes 1mn12s to reach y=0.47
 //! with a bad initialization with 0.5
 
-extern crate env_logger;
-extern crate rand;
-extern crate rand_distr;
-extern crate multistochgrad;
+
 
 use std::path::{PathBuf};
 use std::fs::{OpenOptions};
