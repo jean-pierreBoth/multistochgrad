@@ -5,8 +5,9 @@ authors = ["jeanpierre.both@gmail.com"]
 description = "Stochastic Gradient, Multithreaded"
 license = "MIT/Apache-2.0"
 readme = "README.md"
-keywords = ["algorithms", "optimization"]
+keywords = ["stochastic gradient", "algorithms", "optimization"]
 repository = "https://github.com/jean-pierreBoth/multistochgrad"
+documentation = "https://docs.rs/multistochgrad"
 edition= "2018"
 
 [features]
