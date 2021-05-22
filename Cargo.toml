@@ -55,10 +55,6 @@ path = "examples/mnist_logistic_sag.rs"
 # infrastructure
 
 # for //
-crossbeam-utils = "0.8"
-crossbeam-channel = "0.5"
-parking_lot = "0.6"
-
 rayon = {version = "1.5",  doc = false}
 
 num_cpus = {version = "1.8.0", doc = false}
@@ -66,11 +62,8 @@ num_cpus = {version = "1.8.0", doc = false}
 cpu-time = {version = "1.0", doc = false}
 time = {version = "0.2",  doc = false}
 
-ndarray = {version = "0.13", doc = false, features=["rayon"]}
+ndarray = {version = ">=0.13", doc = false, features=["rayon"]}
 
-clap = {version = "2.33", doc = false}
-#  for hashing . hashbrown still needed beccause of get_key_value(&key)
-hashbrown = {version = "0.11", doc = false}
 
 rand = {version = "0.8", doc = false}
 rand_distr = {version = "0.4", doc = false}
