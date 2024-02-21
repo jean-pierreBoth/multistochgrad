@@ -1,6 +1,6 @@
 [package]
 name = "multistochgrad"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["jeanpierre.both@gmail.com"]
 description = "Stochastic Gradient, Multithreaded"
 license = "MIT/Apache-2.0"
