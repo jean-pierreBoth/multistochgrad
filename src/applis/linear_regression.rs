@@ -27,7 +27,7 @@ impl SummationC1<Ix1> for SSE<Ix1> {
         let (ref x, y) = self.observations[*i];
         let e = y - linear_regression(w, x);
         // gradient is -e * x. par_apply uses rayon.
-        Zip::from(gradient).and(x).par_apply(| g, &xv| *g = xv * (-e));
+        Zip::from(gradient).and(x).par_for_each(| g, &xv| *g = xv * (-e));
     }
 }
 

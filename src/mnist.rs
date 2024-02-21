@@ -1,10 +1,10 @@
 //! Structure and functions to read MNIST database
 
 use std::io::prelude::*;
-use std::io::{BufReader};
+use std::io::BufReader;
 use ndarray::{Array3, Array1, s};
-use std::fs::{OpenOptions};
-use std::path::{PathBuf};
+use std::fs::OpenOptions;
+use std::path::PathBuf;
 
 /// A struct to load/store [MNIST data](http://yann.lecun.com/exdb/mnist/)  
 /// stores labels (i.e : digits between 0 and 9) coming from file train-labels-idx1-ubyte      
@@ -36,7 +36,7 @@ impl MnistData {
         } )
     } // end of new for MnistData
 
-    /// returns labels of images. lables[k] is the label of the k th image.
+    /// returns labels of images. lables\[k\] is the label of the k th image.
     pub fn get_labels(&self) -> &Array1::<u8> {
         &self.labels
     }

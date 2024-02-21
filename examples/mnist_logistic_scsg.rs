@@ -8,8 +8,8 @@
 
 
 
-use std::path::{PathBuf};
-use std::fs::{OpenOptions};
+use std::path::PathBuf;
+use std::fs::OpenOptions;
 
 use std::io;
 use std::io::prelude::*;
@@ -22,8 +22,8 @@ use multistochgrad::prelude::*;
 use multistochgrad::applis::logistic_regression::*;
 
 
-const IMAGE_FNAME_STR : &str = "/home.1/jpboth/Data/MNIST/train-images-idx3-ubyte";
-const LABEL_FNAME_STR : &str = "/home.1/jpboth/Data/MNIST/train-labels-idx1-ubyte";
+const IMAGE_FNAME_STR : &str = "/home/jpboth/Data/ANN/MNIST/train-images-idx3-ubyte";
+const LABEL_FNAME_STR : &str = "/home/jpboth/Data/ANN/MNIST/train-labels-idx1-ubyte";
 
 
 fn main () {
@@ -37,7 +37,7 @@ fn main () {
         println!("could not open image file : {:?}", IMAGE_FNAME_STR);
         return;
     }    
-    let label_path = PathBuf::from(LABEL_FNAME_STR.clone());
+    let label_path = PathBuf::from(LABEL_FNAME_STR);
     let label_file_res = OpenOptions::new().read(true).open(&label_path);
     if label_file_res.is_err() {
         println!("could not open label file : {:?}", LABEL_FNAME_STR);

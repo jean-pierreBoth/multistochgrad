@@ -5,8 +5,6 @@
 //! more natural to solve a multiclass problem.
 //! 
 
-extern crate rand;
-extern crate rand_distr;
 
 use ndarray::prelude::*;
 
@@ -46,7 +44,7 @@ impl LogisticRegression {
 
 
 /// We implement the trait Summation using 2 dimensional Arrays.
-/// We use the variable coefficients : Array2<f64> so that 
+/// We use the variable coefficients : Array2\<f64\> so that 
 /// a row is coefficient array corresponding to (1 augmented) observations and a column is coefficients by class.
 /// Recall that ndarray is by default with C storage (row oriented)
 /// 

@@ -1,14 +1,14 @@
 //! A Rust implementation of Lei-Jordan papers:     
-//! ``"On the adaptativity of Stochastic gradient based optimization"`` (2019)  [SCSG-1](https://arxiv.org/abs/1904.04480)  
-//! ``"Less than a single pass : stochastically controlled stochastic gradient"`` (2019) [SCSG-2](https://arxiv.org/abs/1609.03261)
+//! ``"On the adaptativity of Stochastic gradient based optimization"`` (2019) [SCSG-1](https://arxiv.org/abs/1904.04480)  
+//! ``"Less than a single pass : stochastically controlled stochastic gradient"`` (2019)  [SCSG-2](https://arxiv.org/abs/1609.03261)
 
 use log::Level::*;
 use log::{debug, info, warn, trace, log_enabled};
 
 use std::iter::FromIterator;
 
-use rand::{SeedableRng};
-use rand::distributions::{Distribution};
+use rand::SeedableRng;
+use rand::distributions::Distribution;
 // a fast but non crypto secure algo. method jump to use in // !!!!
 use rand_xoshiro::Xoshiro256PlusPlus;
 use ndarray::{Array, Dimension};

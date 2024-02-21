@@ -31,12 +31,8 @@ The algorithms alternate some form of large batch computation (computing gradien
 and small or mini batches (computing a small number of terms, possibly just one, term of the gradient)
 and updating position by combining these global and local gradients.
 
-Further details on the algorithms are in the doc of files scsg.rs, svrg.rs, sag.rs
-(run **cargo doc --no-deps** as usual to get html generated docs) and in the reference papers.
 
-The implementation is based on the `ndarray` and `rayon` crates that provide respectively efficient
-array manipulation and transparent threaded computations. All batch computation of size greater than 1000 terms
-are multithreaded.
+
 
 ## Examples and tests
 
@@ -45,13 +41,12 @@ Small tests consist in a line fitting problem that is taken  from the crate opti
 Examples are based on logisitc regression applied to digits MNIST database
 (as in the second paper on SCSG).  
 The data files can be downloaded from [MNIST](http://yann.lecun.com/exdb/mnist).
-The database has 60000 images of 784 pixels corresponding to
-handwritten digits form 0 to 9.  
+
 The logistic regression, with 10 classes,  is tested with the 3 algorithms and some comments are provided, comparing the results.
 Times are obtained by launching twice the example to avoid the compilation time of the first pass.
+
 Run times are those obtained on a 4 hyperthreaded i7-cores laptop at 2.7Ghz.
-(If you want to run the examples just download and modify the path to mnist files according to your settings
-in the examples sources)
+
 
 ### SCSG logistic regression
 
@@ -108,8 +103,7 @@ error at initial position: 2.3
 |  50     |     2000           |  0.05   |  0.25    |  21    |  
 |  100     |    1000           |  0.05   |  0.246   |  35    |  
 
-We check from the lines 2,3 and 4 that running mini batch of size one randomly selected
-comes for free in cpu time, so we can run many mini-batch and get a better precision.
+
 
 ### SAG logisitc regression
 
@@ -152,4 +146,3 @@ Licensed under either of
 
 at your option.
 
-This software was written on my own while working at [CEA](http://www.cea.fr/)

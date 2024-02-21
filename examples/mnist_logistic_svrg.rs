@@ -11,8 +11,8 @@
 
 
 
-use std::path::{PathBuf};
-use std::fs::{OpenOptions};
+use std::path::PathBuf;
+use std::fs::OpenOptions;
 
 use std::io;
 use std::io::prelude::*;
@@ -40,7 +40,7 @@ fn main () {
         println!("could not open image file : {:?}", IMAGE_FNAME_STR);
         return;
     }    
-    let label_path = PathBuf::from(LABEL_FNAME_STR.clone());
+    let label_path = PathBuf::from(LABEL_FNAME_STR);
     let label_file_res = OpenOptions::new().read(true).open(&label_path);
     if label_file_res.is_err() {
         println!("could not open label file : {:?}", LABEL_FNAME_STR);

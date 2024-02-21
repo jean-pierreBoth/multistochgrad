@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["algorithms", "optimization", "stochastic"]
 repository = "https://github.com/jean-pierreBoth/multistochgrad"
 documentation = "https://docs.rs/multistochgrad"
-edition= "2018"
+edition= "2021"
 
 [features]
 
@@ -55,14 +55,14 @@ path = "examples/mnist_logistic_sag.rs"
 # infrastructure
 
 # for //
-rayon = {version = "1.5",  doc = false}
+rayon = {version = "1.8",  doc = false}
 
 num_cpus = {version = "1.8.0", doc = false}
 
 cpu-time = {version = "1.0", doc = false}
-time = {version = "0.2",  doc = false}
+time = {version = "0.3",  doc = false}
 
-ndarray = {version = ">=0.13", doc = false, features=["rayon"]}
+ndarray = {version = ">=0.15", doc = false, features=["rayon"]}
 
 
 rand = {version = "0.8", doc = false}
@@ -72,7 +72,7 @@ lazy_static = { version = "1.4", doc = false}
 # decreasing order of log for debug build : (max_level_)trace debug info warn error off
 # decreasing order of log for release build (release_max_level_)  .. idem
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
-env_logger = { version = "0.8"}
+env_logger = { version = "0.11"}
 
 
 
