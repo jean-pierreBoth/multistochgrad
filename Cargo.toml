@@ -62,7 +62,7 @@ num_cpus = {version = "1.8.0", doc = false}
 cpu-time = {version = "1.0", doc = false}
 time = {version = "0.3",  doc = false}
 
-ndarray = {version = ">=0.15", doc = false, features=["rayon"]}
+ndarray = {version = "0.15", doc = false, features=["rayon"]}
 
 
 rand = {version = "0.8", doc = false}
@@ -71,7 +71,7 @@ rand_xoshiro = {version = "0.6", doc = false}
 lazy_static = { version = "1.4", doc = false}
 # decreasing order of log for debug build : (max_level_)trace debug info warn error off
 # decreasing order of log for release build (release_max_level_)  .. idem
-log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
+log = { version = "0.4"}
 env_logger = { version = "0.11"}
 
 

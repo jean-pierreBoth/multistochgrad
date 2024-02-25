@@ -43,9 +43,8 @@ Examples are based on logisitc regression applied to digits MNIST database
 The data files can be downloaded from [MNIST](http://yann.lecun.com/exdb/mnist).
 
 The logistic regression, with 10 classes,  is tested with the 3 algorithms and some comments are provided, comparing the results.
-Times are obtained by launching twice the example to avoid the compilation time of the first pass.
 
-Run times are those obtained on a 4 hyperthreaded i7-cores laptop at 2.7Ghz.
+Run times are obtained on a i9-13900HX (32 threads). We give wall clock time and cpu times spent in minimizer.
 
 
 ### SCSG logistic regression
@@ -58,25 +57,27 @@ Here we give some results:
 * initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
-| nb iter | B_0    |   m_0    | step_0  | y value | time(s) |
-|  :---:  | :---:  |  :-----: | :----:  |   ----  |  ----   |
-|  70     | 0.02   |  0.002   |  0.15   |  0.295  |  6.6    |
-|  50     | 0.015  |  0.004   |  0.1    |  0.29   |  7.0    |
-|  50     | 0.015  |  0.006   |  0.1    |  0.279  |  9.1    |
-| 100     | 0.02   |  0.004   |  0.1    |  0.266  |  12.5  |
-|  50     | 0.02   |  0.004   |  0.1    |  0.288  |  6.5   |
+| nb iter |  B_0  |  m_0  | step_0 | error | time(s) | cpu time(s) |
+| :-----: | :---: | :---: | :----: | ----- | ------- | ----------- |
+|   50    | 0.015 | 0.004 |  0.1   | 0.285 | 2.9     | 14.8        |
+|   50    | 0.015 | 0.006 |  0.1   | 0.279 | 6.8     | 19          |
+|   100   | 0.02  | 0.004 |  0.1   | 0.266 | 7.89    | 32.5        |
+|   50    | 0.02  | 0.004 |  0.1   | 0.289 | 3.89    | 16          |
+|   150   | 0.02  | 0.004 |  0.1   | 0.257 | 11      | 50          |
+
 
 * initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
 
-| nb iter | B_0    |   m_0    | step_0  | y value  | time(s)|
-|  ---    |----    |  ----    | ------  |   ----   |  ----  |
-|  50     | 0.015  |  0.006   |  0.1    |  0.27    |  8.5   |
-|  50     | 0.015  |  0.004   |  0.1    |  0.274   |  6.8   |
-|  50     | 0.02   |  0.004   |  0.1    |  0.275   |  6.4   |
-|  50     | 0.02   |  0.006   |  0.1    |  0.268   |  8.0   |
-|  100    | 0.02   |  0.006   |  0.1    |  0.258   |  15.5  |
+| nb iter | B_0   | m_0   | step_0 | error | time(s) | cpu time(s) |
+| ------- | ----- | ----- | ------ | ----- | ------- | ----------- |
+| 50      | 0.015 | 0.004 | 0.1    | 0.274 | 4.7     | 17          |
+| 50      | 0.02  | 0.004 | 0.1    | 0.277 | 3.7     | 16.5        |
+| 50      | 0.02  | 0.006 | 0.1    | 0.267 | 5.5     | 18          |
+| 100     | 0.02  | 0.004 | 0.1    | 0.260 | 7.6     | 33          |
 
+
+Increasing parameter controlling the number of minibatch decrease parallelism.  
 It seems that convergence from the initialization from a null image is slightly easier than
 with a constant 0.5 pixel.
 
@@ -85,23 +86,21 @@ with a constant 0.5 pixel.
 * initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
-| nb iter |  nb mini batch     | step    | y value   | time(s)  |
-|  ---    |     :---:          | ------  |   :---:   |  :----:  |
-|  100    |     1000           |  0.02   |  0.27     |   35     |  
-|  25     |     1000           |  0.05   |  0.288    |   9      |
-|  50     |     1000           |  0.05   |  0.26     |   18     |
-|  100    |     1000           |  0.05   |  0.25     |   36     |
+| nb iter | nb mini batch | step | error | time(s) | cpu time(s) |
+| ------- | :-----------: | ---- | :---: | :-----: | ----------- |
+| 100     |     1000      | 0.02 | 0.269 |  10.5   | 159         |
+| 25      |     1000      | 0.05 | 0.288 |   2.6   | 40          |
+| 50      |     1000      | 0.05 | 0.263 |   5.    | 81          |
+| 100     |     1000      | 0.05 | 0.249 |  10.2   | 160         |
 
 * initialization position : 9 images with *constant pixel = 0.0*,
 error at initial position: 2.3
 
-| nb iter |  nb mini batch     | step    | y value  | time(s) |
-|  ---    |     :---:          | ------  |   ----   |  ----  |
-|  50     |     500            |  0.02   |  0.30    |  17    |
-|  50     |     500            |  0.05   |  0.27    |  17    |
-|  50     |     1000           |  0.05   |  0.26    |  18    |  
-|  50     |     2000           |  0.05   |  0.25    |  21    |  
-|  100     |    1000           |  0.05   |  0.246   |  35    |  
+| nb iter | nb mini batch | step | error | time(s) | cpu time(s) |
+| ------- | :-----------: | ---- | ----- | ------- | ----------- |
+| 50      |     1000      | 0.05 | 0.258 | 5.3     | 80          |
+| 50      |     2000      | 0.05 | 0.247 | 7.5     | 81          |
+| 100     |     1000      | 0.05 | 0.247 | 10      | 161         |
 
 
 
@@ -110,32 +109,27 @@ error at initial position: 2.3
 * initialization position : 9 images with *constant pixel = 0.5*,
 error at initial position: 6.94
 
-| nb iter |  batch size  | step   | y value  | time(s) |
-|  :---:  |  :---:       |  :---: | :----:   |   ----  |
-|  1000   |  2000        |  0.1   |  0.86    |   45    |
-|  1000   |  1000        |  0.2   |  0.47    |   40    |
-|  2000   |  1000        |  0.2   |  0.37    |   80    |
-|  1000   |  1000        |  0.3   |  0.40    |   38    |
-|  1000   |  1000        |  0.4   |  0.37    |   38    |
-|  1000   |  2000        |  0.4   |  0.37    |   41    |
+| nb iter | batch size | step  | error | time(s) | cpu time(s) |
+| :-----: | :--------: | :---: | :---: | ------- | ----------- |
+|  1000   |    1000    |  0.2  | 0.47  | 17      | 272         |
+|  1000   |    1000    |  0.5  | 0.35  | 17      | 273         |
+|  1000   |    2000    |  0.5  | 0.34  | 17.6    | 262         |
+|  2000   |    1000    |  0.5  | 0.297 | 34.6    | 546         |
 
 ### Results
 
 Tests show that the SCSG  outperforms SVRG by a factor 1.5 or 2  at equivalent precision in
 both case with a correct initialization and one far from the solution.
-SVRG clearly outperforms SAG.
+SVRG clearly outperforms SAG.  
 SCSG is very fast at reaching a good approximation roughly 0.28 even though it never runs on
-the whole (one tenth) in this implementation.  
+the whole (one tenth) in this implementation. 
+SCSG needs larger problem to benefit from multithreading.  
 
 ## Acknowledgement
 
 This crate is indebted to the crate **optimisation** from which I kept the traits `Function`, `Summation`
 defining the user interface after various modifications which are detailed in the file ``types.rs``
 
-## Julia implementation
-
-There is also a Julia implementation of the SCSC and SVRG algorithm at
-[MultiStochGrad](https://github.com/jean-pierreBoth/MultiStochGrad.jl)
 
 ## License
 

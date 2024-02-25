@@ -2,10 +2,7 @@
 // for logging (debug mostly, switched at compile time in cargo.toml)
 
 
-
-
-#[macro_use]
-extern crate lazy_static;
+use lazy_static::lazy_static;
 
 pub mod prelude;
 pub mod types;
@@ -17,7 +14,6 @@ mod monitor;
 pub mod applis;
 
 lazy_static! {
-    #[allow(dead_code)]
     static ref LOG: u64 = {
         let res = init_log();
         res
@@ -26,8 +22,10 @@ lazy_static! {
 
 // install a logger facility
 fn init_log() -> u64 {
-    env_logger::try_init().unwrap();
-    println!("\n ************** initializing logger *****************\n");    
+    let res = env_logger::try_init();
+    if res.is_ok() {
+        println!("\n ************** initializing logger *****************\n");  
+    }
     return 1;
 }
 

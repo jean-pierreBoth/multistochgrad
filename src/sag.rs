@@ -1,9 +1,9 @@
 //! Implementation of basic Stochastic Average Gradient (SAG)
-//! 
+//!
 //! The Stochastic Averaged Gradient Descent as described in the paper:
-//! "Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)
+//! Minimizing Finite Sums with the Stochastic Average Gradient (2013, 2016)
 //! M.Schmidt, N.LeRoux, F.Bach
-//! 
+//!
 //!   f(x) = 1/n ∑ fᵢ(x) , with fᵢ such that there exist a constant L with ∇fᵢ is L lipschitz
 //!
 
@@ -15,70 +15,70 @@
 #[allow(unused_imports)]
 use log::Level::*;
 #[allow(unused_imports)]
-use log::{debug, info, warn, trace, log_enabled};
+use log::{debug, info, log_enabled, trace, warn};
 
-use rand::{SeedableRng};
-use rand::distributions::{Distribution};
+use cpu_time::ProcessTime;
+use std::time::SystemTime;
+
+use rand::distributions::Distribution;
+use rand::SeedableRng;
 // a fast but non crypto secure algo. method jump to use in // !!!!
-use rand_xoshiro::Xoshiro256PlusPlus;
 use ndarray::{Array, Dimension};
+use rand_xoshiro::Xoshiro256PlusPlus;
 
-use crate::types::*;
 use crate::monitor::*;
-
+use crate::types::*;
 
 ///
-/// Provides stochastic Average Gradient Descent optimization described in : 
+/// Provides stochastic Average Gradient Descent optimization described in :
 ///  *"Minimizing Finite Sums with the Stochastic Average Gradient" (2013, 2016)*
 ///   M.Schmidt, N.LeRoux, F.Bach
-/// 
+///
 /// We implemented a mini batch version as it consumes less memory. Moreover
 /// we found it is more stable.
-/// 
+///
 /// The algorithm never computes a full gradient. It initialize the direction of propagation
-/// as a null vector. 
+/// as a null vector.
 /// The terms of the sum as grouped in blocks. At each iteration
 /// the gradient of randomly selected block is computed at the current position, and
-/// replace the gradient of this same block obtained at the last iteration it was selected. 
+/// replace the gradient of this same block obtained at the last iteration it was selected.
 /// So the current estimate of the total gradient is made of blocks contributions that are more or less outdated.
-/// 
+///
 /// It must be noted that gradients of each block are stored and updated for future use when
 /// the block is reused. So the larger the block size, the lesser the number of blocks but more work is done at each iteration.
-/// 
-/// 
+///
+///
 /// Precisely we have the following sequence:  
 /// - random selection of a block  
-/// - computation of the partial gradient of the sum of terms in the block 
-/// - computation of direction of propagation as the batch gradient + gradient of block at current position 
+/// - computation of the partial gradient of the sum of terms in the block
+/// - computation of direction of propagation as the batch gradient + gradient of block at current position
 ///                     - gradient of the same block last time it was computed.
 /// - update of position
-/// 
+///
 /// The step size is constant.
-/// 
+///
 pub struct SagDescent {
     //
     rng: Xoshiro256PlusPlus,
     /// batch size for partial update of gradient
-    batch_size : usize,
+    batch_size: usize,
     /// step size
-    step_size : f64,
+    step_size: f64,
     ///
-    _momentum : Option<f64>,
+    _momentum: Option<f64>,
 }
-
-
 
 impl SagDescent {
     /// size of batch or block to use.
-    pub fn new(batch_size: usize, step_size : f64) -> SagDescent {
+    pub fn new(batch_size: usize, step_size: f64) -> SagDescent {
         //
         trace!(" batch size {:?} step_size {:2.4E} ", batch_size, step_size);
         //
         SagDescent {
-            rng : Xoshiro256PlusPlus::seed_from_u64(4664397),
-            batch_size : batch_size,
-            step_size : step_size,
-            _momentum : None,
+            rng: Xoshiro256PlusPlus::seed_from_u64(4664397),
+            batch_size: batch_size,
+            step_size: step_size,
+            _momentum: None,
         }
     }
     /// Seeds the random number generator using the supplied `seed`.
@@ -87,17 +87,24 @@ impl SagDescent {
         self.rng = Xoshiro256PlusPlus::from_seed(seed);
     }
     ///
-    fn get_step_size_at_jstep(&self, _j:usize) -> f64 {
+    fn get_step_size_at_jstep(&self, _j: usize) -> f64 {
         self.step_size
-    }    
+    }
 } // end impl SagDescent
 
-
-
-impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
+impl<D: Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for SagDescent {
     type Solution = Solution<D>;
 
-    fn minimize(&self, function: &F, initial_position: &Array<f64,D>, max_iterations : Option<usize>) -> Solution<D> {
+    fn minimize(
+        &self,
+        function: &F,
+        initial_position: &Array<f64, D>,
+        max_iterations: Option<usize>,
+    ) -> Solution<D> {
+        //
+        let cpu_start = ProcessTime::now();
+        let sys_now = SystemTime::now();
+        //
         let mut position = initial_position.clone();
         let mut value = function.value(&position);
         let nb_max_iterations = max_iterations.unwrap();
@@ -109,10 +116,10 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
         }
         trace!("nb_max_iterations {:?}", nb_max_iterations);
         // some temporaries
-        let mut term_gradient_current : Array<f64, D>;
+        let mut term_gradient_current: Array<f64, D>;
         term_gradient_current = position.clone();
-        term_gradient_current.fill(0.);        
-        // 
+        term_gradient_current.fill(0.);
+        //
         let mut rng = self.rng.clone();
         let nb_terms = function.terms();
         let mut monitoring = IterationRes::<D>::new(nb_max_iterations, SolMode::Last);
@@ -120,34 +127,33 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
         let mut iteration = 0;
         //
         let mut direction = initial_position.clone();
-        direction.fill(0.);        
-        // blocks 
+        direction.fill(0.);
+        // blocks
         let mut nb_block_seen = 0;
         let block_size = self.batch_size;
         let nb_blocks = if nb_terms % block_size == 0 {
-                nb_terms / block_size
-        }
-        else {
+            nb_terms / block_size
+        } else {
             nb_terms / block_size + 1
         };
         let mut block_seen = Vec::<u8>::with_capacity(nb_blocks);
-        let mut gradient_list = Vec::<Box<Array<f64,D>>>::with_capacity(nb_blocks);
+        let mut gradient_list = Vec::<Box<Array<f64, D>>>::with_capacity(nb_blocks);
         for _block in 0..nb_blocks {
             gradient_list.push(Box::new(term_gradient_current.clone()));
             block_seen.push(0);
         }
-        let block_start = | i : usize | -> usize {
+        let block_start = |i: usize| -> usize {
             let start = i * block_size;
             start
         };
-        let block_end =  | i : usize | -> usize {
-            let end = ((i+1) * block_size).min(nb_terms);
+        let block_end = |i: usize| -> usize {
+            let end = ((i + 1) * block_size).min(nb_terms);
             end
         };
         //
         loop {
             // sample unbiaised ...) i in 0..nbterms
-            let xsi : f64 = rand_distr::Standard.sample(&mut rng);
+            let xsi: f64 = rand_distr::Standard.sample(&mut rng);
             let block = (nb_blocks as f64 * xsi).floor() as usize;
             if block_seen[block] == 0 {
                 block_seen[block] = 1;
@@ -157,9 +163,12 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
                 }
             }
             // trace!(" term_gradient_current {:2.4E} ", &crate::types::norm_l2(&term_gradient_current));
-            let block_content = &(block_start(block) .. block_end(block)).into_iter().collect::<Vec<usize>>();
+            let block_content = &(block_start(block)..block_end(block))
+                .into_iter()
+                .collect::<Vec<usize>>();
             function.partial_gradient(&position, block_content, &mut term_gradient_current);
-            direction = direction - (gradient_list[block].as_ref() - &term_gradient_current) / (nb_terms as f64);
+            direction = direction
+                - (gradient_list[block].as_ref() - &term_gradient_current) / (nb_terms as f64);
             gradient_list[block] = Box::new(term_gradient_current.clone());
             // update position
             position = position - self.get_step_size_at_jstep(iteration) * &direction;
@@ -168,23 +177,30 @@ impl<D:Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for  SagDescent {
             value = function.value(&position);
             let gradnorm = crate::types::norm_l2(&direction);
             monitoring.push(value, &position, gradnorm);
-            if log_enabled!(Debug) && (iteration % nb_terms == 0) ||  iteration % 10 == 0 {
-//                trace!(" position {:2.6E} ", &position);
-//                trace!(" direction {:2.6E} ", &direction);
-                debug!("\n\n Iteration {:?} y = {:2.4E}, norm grad {:?}", iteration, value, gradnorm);
+            if log_enabled!(Debug) && (iteration % nb_terms == 0) || iteration % 10 == 0 {
+                //                trace!(" position {:2.6E} ", &position);
+                //                trace!(" direction {:2.6E} ", &direction);
+                debug!(
+                    "\n\n Iteration {:?} y = {:2.4E}, norm grad {:?}",
+                    iteration, value, gradnorm
+                );
             }
             // convergence control or max iterations control
+            if iteration >= nb_max_iterations {
+                break;
+            }
             if iteration % nb_terms == 0 && gradnorm < 1.0e-5 {
                 info!("Null gradient , stopping optimization {:2.4E}", gradnorm);
-                return Solution::new(position, value);
             }
-            if iteration >= nb_max_iterations {
-                info!("Reached maximal number of iterations required , stopping optimization");
-                let rank = monitoring.check_monoticity();
-                info!(" monotonous convergence from rank : {:?}", rank);
-                return Solution::new(position, value);
-            }
-        }    
+        }
+        log::info!(
+            "\n SagDescent::minimize ; sys time(ms) {:?} cpu time(ms) {:?}",
+            sys_now.elapsed().unwrap().as_millis(),
+            cpu_start.elapsed().as_millis()
+        );
+        info!("Reached maximal number of iterations required , stopping optimization");
+        let rank = monitoring.check_monoticity();
+        info!(" monotonous convergence from rank : {:?}", rank);
+        return Solution::new(position, value);
     } // end of minimize
-
 } // end of impl Minimizer
