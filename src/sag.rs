@@ -191,6 +191,7 @@ impl<D: Dimension, F: SummationC1<D>> Minimizer<D, F, usize> for SagDescent {
             }
             if iteration % nb_terms == 0 && gradnorm < 1.0e-5 {
                 info!("Null gradient , stopping optimization {:2.4E}", gradnorm);
+                break;
             }
         }
         log::info!(

@@ -2,4 +2,5 @@ target/**
 Runs/**
 Cargo.lock
 rls*
-classes*.img*
+classe*.img*
+*.pdf
