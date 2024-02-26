@@ -78,7 +78,8 @@ fn main() {
     //
     // step, m_0, b_0 , B_0
     let scgd_pb = StochasticControlledGradientDescent::new(
-        0.1, 0.004, // base factor for number of mini batch
+        0.1,   // gradient step at beginning
+        0.004, // base factor for number of mini batch
         1,     // base for size of mini batch
         0.02,
     ); // base for large batch size

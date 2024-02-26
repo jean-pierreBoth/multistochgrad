@@ -9,7 +9,7 @@ The implemented algorithms are:
 
 1. The so-called SCSG algorithm described and analyzed in the two papers by L. Lei and  M.I Jordan.
 
-    * "On the adaptativity of stochastic gradient based optimization" (2019)
+    * "On the adaptativity of stochastic gradient based optimization" (2019,2020)
     [SCSG-1](https://arxiv.org/abs/1904.04480)
 
     * "Less than a single pass : stochastically controlled stochastic gradient" (2019)
@@ -63,7 +63,8 @@ error at initial position: 6.94
 |   50    | 0.015 | 0.006 |  0.1   | 0.279 | 6.8     | 19          |
 |   100   | 0.02  | 0.004 |  0.1   | 0.266 | 7.89    | 32.5        |
 |   50    | 0.02  | 0.004 |  0.1   | 0.289 | 3.89    | 16          |
-|   150   | 0.02  | 0.004 |  0.1   | 0.257 | 11      | 50          |
+|   150   | 0.02  | 0.004 |  0.1   | 0.257 | 12      | 50          |
+|   150   | 0.02  | 0.002 |  0.1   | 0.269 | 6.5     | 45          |
 
 
 * initialization position : 9 images with *constant pixel = 0.0*,
@@ -118,7 +119,7 @@ error at initial position: 6.94
 
 ### Results
 
-Tests show that the SCSG  outperforms SVRG by a factor 1.5 or 2  at equivalent precision in
+Tests show that the SCSG  outperforms SVRG by a factor 1.5 in cpu times  at equivalent precision in
 both case with a correct initialization and one far from the solution.
 SVRG clearly outperforms SAG.  
 SCSG is very fast at reaching a good approximation roughly 0.28 even though it never runs on

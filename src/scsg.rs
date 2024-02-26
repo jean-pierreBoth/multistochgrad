@@ -1,9 +1,9 @@
 //! A Rust implementation of Lei-Jordan papers:     
-//! "On the adaptativity of Stochastic gradient based optimization" (2019) [SCSG-1](https://arxiv.org/abs/1904.04480)  
-//! "Less than a single pass : stochastically controlled stochastic gradient" (2019)  [SCSG-2](https://arxiv.org/abs/1609.03261)
+//! - ``On the adaptativity of Stochastic gradient based optimization`` (2019,2020) [SCSG-1](https://arxiv.org/abs/1904.04480)  
+//! - ``Less than a single pass : stochastically controlled stochastic gradient`` (2019)  [SCSG-2](https://arxiv.org/abs/1609.03261)
 
 use log::Level::*;
-use log::{debug, info, log_enabled, trace, warn};
+use log::{debug, error, info, log_enabled, trace, warn};
 
 use cpu_time::ProcessTime;
 use std::time::SystemTime;
@@ -35,7 +35,7 @@ pub struct BatchSizeInfo {
 
 ///
 /// Provides Stochastic Controlled Gradient Descent optimization based on 2 papers of Lei-Jordan.  
-/// - ``"On the adaptativity of stochastic gradient based optimisation"`` arxiv 2019  [SCSG-1](https://arxiv.org/abs/1904.04480)
+/// - ``"On the adaptativity of stochastic gradient based optimisation"`` arxiv 2019,2020  [SCSG-1](https://arxiv.org/abs/1904.04480)
 /// - ``"Less than a single pass : stochastically controlled stochastic gradient"`` arxiv 2019 [SCSG-2](https://arxiv.org/abs/1609.03261)
 ///
 /// According to the first paper we have the following notations:
@@ -56,15 +56,14 @@ pub struct BatchSizeInfo {
 /// number of mini batches.
 ///   
 /// We adopt a mix of the two papers:
-/// It seems that letting the size of mini batch grow a little is more stable than keeping it to 1.
+///  - Letting the size of mini batch grow a little seems more stable than keeping it to 1.
 /// (in particular when initialization of the algorithm varies.)
-/// but replacing the geometric law by its mean is really more stable due to the large variance of its law.
+/// but replacing the geometric law by its mean is really more stable due to the large variance of its law.  
 ///
-/// We choose a fraction of the number of terms in the sum (*large_batch_fraction_init*) and $alfa$
+///  - We choose a fraction of the number of terms in the sum (*large_batch_fraction_init*) and alfa
 /// so that large_batch_fraction_init * alfa^(2*nbiter) = 1.  
 ///
-/// Then :  
-/// If nbterms is the number of terms in function to minimize and j the iteration number:
+/// Then if nbterms is the number of terms in function to minimize and j the iteration number:
 ///
 ///  -    Bⱼ evolves as :   large_batch_fraction_init * nbterms * alfa^(2j)
 ///  -    mⱼ evolves as :   m_zero * nbterms * alfa^(3j/2)
@@ -72,7 +71,7 @@ pub struct BatchSizeInfo {
 ///  -    ηⱼ evolves as :   eta_0 / alfa^(j/2)
 ///     
 ///
-///  The evolution of Bⱼ is bounded above by nbterms/10 and bⱼ by nbterms/100.  
+///  The evolution of Bⱼ is bounded above by nbterms/10 (can be modified with [Self::set_large_batch_max_fraction()]) and bⱼ by nbterms/100.  
 ///  The size of small batch must stay small so b₀ must be small (typically 1 seems OK)
 ///  
 ///
@@ -86,15 +85,17 @@ pub struct StochasticControlledGradientDescent {
     mini_batch_size_init: usize,
     /// related to B_0 in Paper. Fraction of terms to consider in initialisation of B_0
     large_batch_fraction_init: f64,
+    /// maximum ratio ; size of large batch / nb_terms in the sum. (default to 0.1)
+    large_batch_max_fraction: f64,
 }
 
 impl StochasticControlledGradientDescent {
     /// args are :
-    ///   - eta_zero : initial value of step along gradient value of 0.5 is a good default choice.
+    ///   - eta_zero : initial value of step along gradient value of 0.1 is a good default choice.
     ///   - m_zero : a good value is 0.2 *large_batch_fraction_init so that  mⱼ << Bⱼ
     ///   - mini_batch_size_init : base value for size of mini_batchs : a value of 1 is a good default choice
     ///   - large_batch_fraction_init : fraction of nbterms to initialize large batch size : a good default value is between 0.01 and
-    ///             0.02 large batch size begins at 0.01 * nbterms or 0.02 * nbterms.
+    ///             0.02 so that large batch size begins at 0.01 * nbterms or 0.02 * nbterms.
     ///
     /// (see examples)
     ///
@@ -122,12 +123,20 @@ impl StochasticControlledGradientDescent {
             m_zero: m_zero,
             mini_batch_size_init: mini_batch_size_init,
             large_batch_fraction_init: large_batch_fraction_init as f64,
+            large_batch_max_fraction: 0.1,
         }
     }
     /// Seeds the random number generator using the supplied `seed`.
     /// This is useful to create re-producable results.
     pub fn seed(&mut self, seed: [u8; 32]) {
         self.rng = Xoshiro256PlusPlus::from_seed(seed);
+    }
+
+    /// if larger batch size is needed  maximum large batch size will be set to:
+    /// nb_terms * fraction (default for fraction is 0.1)
+    pub fn set_large_batch_max_fraction(&mut self, fraction: f64) {
+        assert!(0.01 < fraction && fraction < 1.);
+        self.large_batch_max_fraction = fraction;
     }
 
     // batch growing factor cannot be too large, so it must be adjusted accoding to nbterms value, and nb_max_iterations
@@ -138,7 +147,7 @@ impl StochasticControlledGradientDescent {
         let batch_growing_factor: f64;
         //
         if self.m_zero * (nbterms as f64) < 1. {
-            warn!("m_zero fraction , should be greater than 1./ number of terms in sum");
+            error!("m_zero fraction , should be greater than 1./ number of terms in sum");
             std::process::exit(1);
         }
         //
@@ -163,10 +172,10 @@ impl StochasticControlledGradientDescent {
         j: usize,
     ) -> BatchSizeInfo {
         let alfa_j = batch_growing_factor.powi(j as i32);
-        // max size of large batch is 100 or 0.1 * the number of terms
+        // max size of large batch is 100 or  self.large_batch_max_fraction * the number of terms
         let max_large_batch_size;
         if nbterms > 100 {
-            max_large_batch_size = (nbterms as f64 / 10.).ceil() as usize;
+            max_large_batch_size = (nbterms as f64 * self.large_batch_max_fraction).ceil() as usize;
         } else {
             max_large_batch_size = nbterms;
         }
@@ -243,6 +252,23 @@ fn sample_without_replacement_reservoir(
     }
     out_terms
 }
+
+//=====================================================================================
+
+impl Default for StochasticControlledGradientDescent {
+    fn default() -> Self {
+        StochasticControlledGradientDescent {
+            rng: Xoshiro256PlusPlus::seed_from_u64(4664397),
+            eta_zero: 0.1,
+            m_zero: 0.04,
+            mini_batch_size_init: 1,
+            large_batch_fraction_init: 0.1,
+            large_batch_max_fraction: 0.1,
+        }
+    }
+}
+
+//========================================================================================
 
 impl<D: Dimension, F: SummationC1<D>> Minimizer<D, F, usize>
     for StochasticControlledGradientDescent
